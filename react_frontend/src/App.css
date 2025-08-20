@@ -1,0 +1,48 @@
+#root {
+  margin: 0 auto;
+}
+
+#app {
+  display: flex;
+  height: 100vh;
+}
+
+#disp {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 2rem;
+  margin-left: 3rem;
+}
+
+.header {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0 0 1rem 0;
+}
+
+.reg-form > div {
+  margin: 0.5rem;
+}
+
+.reg-form > div > label,
+.reg-form > div > input {
+  display: inline-block;
+  width: 200px;
+}
+
+.reg-form > div > button {
+  width: 100px;
+  cursor: pointer;
+}
+
+.msg {
+  margin: 2rem 0;
+}
+
+.msg_success {
+  color: #6e94c2;
+}
+
+.msg_fail {
+  color: #bf2a3e;
+}

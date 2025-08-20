@@ -1,0 +1,66 @@
+use std::error;
+use std::fmt;
+use std::io;
+use hyper;
+use serde_json;
+
+// pub type DynError = Box<dyn error::Error + Send + Sync + 'static>;
+
+#[derive(Debug)]
+pub enum WebErrorKind {
+    Hyper,
+    HyperHTTP,
+    Io,
+    SerdeJSON,
+    Register,
+}
+
+#[derive(Debug)]
+pub struct WebError {
+    pub msg: String,
+    pub kind: WebErrorKind
+}
+
+impl fmt::Display for WebError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?} -> {}", self.kind, self.msg)
+    }
+}
+
+impl error::Error for WebError {}
+
+impl From<hyper::http::Error> for WebError {
+    fn from(value: hyper::http::Error) -> Self {
+        WebError {
+            msg: value.to_string(),
+            kind: WebErrorKind::HyperHTTP
+        }
+    }
+}
+
+impl From<hyper::Error> for WebError {
+    fn from(value: hyper::Error) -> Self {
+        WebError {
+            msg: value.to_string(),
+            kind: WebErrorKind::Hyper
+        }
+    }
+}
+
+impl From<io::Error> for WebError {
+    fn from(value: io::Error) -> Self {
+        WebError {
+            msg: value.to_string(),
+            kind: WebErrorKind::Io
+        }
+    }
+}
+
+impl From<serde_json::Error> for WebError {
+    fn from(value: serde_json::Error) -> Self {
+        WebError {
+            msg: value.to_string(),
+            kind: WebErrorKind::SerdeJSON
+        }
+    }
+}

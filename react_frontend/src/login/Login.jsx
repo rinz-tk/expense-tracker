@@ -1,0 +1,110 @@
+import { useState } from 'react'
+
+function LoginWindow() {
+  const [login_info, set_login_info] = useState({
+    username: '',
+    password: ''
+  });
+
+  const [msg_info, set_msg_info] = useState({
+    msg: '',
+    msg_type: 'msg_success'
+  });
+
+  function save_val(e) {
+    const { name, value } = e.target;
+    set_login_info({
+      ...login_info,
+      [name]: value
+    });
+  }
+
+  async function onSubmit(e) {
+    e.preventDefault();
+
+    if(login_info.username === '') {
+      set_msg_info({
+        msg: 'Empty username',
+        msg_type: 'msg_fail'
+      });
+
+      return;
+    }
+
+    if(login_info.password === '') {
+      set_msg_info({
+        msg: 'Empty password',
+        msg_type: 'msg_fail'
+      });
+
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(login_info)
+      });
+
+      if(!response.ok) {
+        const err = await response.text();
+
+        set_msg_info({
+          msg: `Error: ${err}`,
+          msg_type: 'msg_fail'
+        });
+
+        return;
+      }
+
+    } catch(error) {
+      set_msg_info({
+        msg: `Error: ${error}`,
+        msg_type: 'msg_fail'
+      });
+    }
+  }
+
+  return (
+    <>
+      <form className='reg-form' onSubmit={onSubmit}>
+
+        <div>
+          <label>
+            Username
+          </label>
+          <input
+            name='username'
+            type='text'
+            value={login_info.username}
+            onChange={save_val}
+          />
+        </div>
+
+        <div>
+          <label>
+            Password
+          </label>
+          <input
+            name='password'
+            type='password'
+            value={login_info.password}
+            onChange={save_val}
+          />
+        </div>
+
+        <div>
+          <button type='submit'>Submit</button>
+        </div>
+        
+      </form>
+
+      <div className={`msg ${msg_info.msg_type}`}>
+        {msg_info.msg}
+      </div>
+    </>
+  );
+}
+
+export default LoginWindow
