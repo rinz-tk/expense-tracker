@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState } from 'react';
+import { jwtDecode } from 'jwt-decode';
 
-function LoginWindow() {
+function LoginWindow({ set_logged_in, set_disp }) {
   const [login_info, set_login_info] = useState({
     username: '',
     password: ''
@@ -58,6 +59,22 @@ function LoginWindow() {
         return;
       }
 
+      const data = await response.json();
+
+      if(data.status == 'Ok') {
+        console.log(jwtDecode(data.token));
+
+        set_logged_in({
+          in: true,
+          usn: login_info.username,
+          token: data.token
+        });
+
+        set_disp('Logout');
+      } else {
+        console.log(data.status);
+      }
+
     } catch(error) {
       set_msg_info({
         msg: `Error: ${error}`,
@@ -68,7 +85,7 @@ function LoginWindow() {
 
   return (
     <>
-      <form className='reg-form' onSubmit={onSubmit}>
+      <form className='reg-form' autoComplete='off' onSubmit={onSubmit}>
 
         <div>
           <label>

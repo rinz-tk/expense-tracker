@@ -81,7 +81,7 @@ function RegisterWindow() {
 
   return (
     <>
-      <form className='reg-form' onSubmit={onSubmit}>
+      <form className='reg-form' autoComplete='off' onSubmit={onSubmit}>
 
         <div>
           <label>

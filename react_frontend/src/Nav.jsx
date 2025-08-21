@@ -1,45 +1,26 @@
+import { useState } from 'react'
 import './Nav.css'
-import RegisterWindow from './register/Register.jsx'
-import LoginWindow from './login/Login.jsx'
-import { useState, useEffect } from 'react'
 
-function Home() {
-  return (<></>);
-}
-
-const items = {
-  Home: Home,
-  Register: RegisterWindow,
-  Login: LoginWindow,
-};
-
-function Nav({ set_disp }) {
+function Nav({ set_disp, logged_in }) {
   const [open, set_open] = useState(false);
-
-  useEffect(() => {
-    set_disp_window('Home');
-  }, []);
 
   function clickNav() {
     set_open(prev => !prev);
   }
 
-  function set_disp_window(name) {
-    const Elem = items[name];
+  const cur_items = ['Expenses', 'Register'];
 
-    set_disp(
-        <>
-          <div className="header">{name}</div>
-          <Elem/>
-        </>
-    );
+  if(logged_in.in) {
+    cur_items.push('Logout');
+  } else {
+    cur_items.push('Login');
   }
 
   let nav_bar = <div className="nav-bar button" onClick={clickNav}/>;
 
   if(open) {
-    const items_list = Object.keys(items).map((name, id) => (
-        <button key={id} onClick={() => set_disp_window(name)}>
+    const items_list = cur_items.map((name, id) => (
+        <button key={id} onClick={() => set_disp(name)}>
           {name}
         </button>
       )
@@ -58,4 +39,4 @@ function Nav({ set_disp }) {
   return nav_bar;
 }
 
-export default Nav
+export default Nav;

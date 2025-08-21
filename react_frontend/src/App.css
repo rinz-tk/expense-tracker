@@ -14,6 +14,10 @@
   margin-left: 3rem;
 }
 
+button {
+  cursor: pointer;
+}
+
 .header {
   font-size: 1.5rem;
   font-weight: bold;
@@ -32,7 +36,6 @@
 
 .reg-form > div > button {
   width: 100px;
-  cursor: pointer;
 }
 
 .msg {

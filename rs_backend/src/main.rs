@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::fs;
 use futures_util::lock::Mutex;
 use tokio::net::{TcpListener, TcpStream};
+use once_cell::sync::Lazy;
 
 use http_body_util::combinators::BoxBody;
 use hyper_util::rt::TokioIo;
@@ -16,6 +18,12 @@ mod web_error;
 
 use connect::Connect;
 use web_error::WebError;
+
+static LOGIN_KEY: Lazy<Vec<u8>> = Lazy::new(|| {
+    let secret_file = "secret/secret_key";
+    fs::read(secret_file)
+        .expect(&format!("Unable to open {secret_file}"))
+});
 
 async fn process(wrapped_state: &Mutex<Connect>, req: Request<Incoming>) -> Result<Response<BoxBody<Bytes, WebError>>, WebError> {
     let mut state = wrapped_state.lock().await;
