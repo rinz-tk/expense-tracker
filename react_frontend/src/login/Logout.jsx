@@ -1,4 +1,4 @@
-function LogoutWindow({ logged_in, set_logged_in, set_disp }) {
+function LogoutWindow({ logged_in, set_logged_in, set_disp, login_redirect }) {
   function logout() {
     set_logged_in({
       in: false,
@@ -9,13 +9,21 @@ function LogoutWindow({ logged_in, set_logged_in, set_disp }) {
     set_disp('Login');
   }
 
-  const msg = `${logged_in.usn} logged in`;
+  let msg = (<></>);
+
+  if(login_redirect.current) {
+    msg = (
+      <div className='msg msg_success'>
+        <span className="bold">{logged_in.usn}</span> logged in
+      </div>
+    );
+
+    login_redirect.current = false;
+  }
 
   return (
     <>
-      <div className="msg msg_success">
-        {msg}
-      </div>
+      {msg}
       <button onClick={logout}>Logout</button>
     </>
   );

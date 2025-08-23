@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { jwtDecode } from 'jwt-decode';
+// import { jwtDecode } from 'jwt-decode';
 
-function LoginWindow({ set_logged_in, set_disp }) {
+function LoginWindow({ set_logged_in, set_disp, login_redirect }) {
   const [login_info, set_login_info] = useState({
     username: '',
     password: ''
@@ -61,8 +61,8 @@ function LoginWindow({ set_logged_in, set_disp }) {
 
       const data = await response.json();
 
-      if(data.status == 'Ok') {
-        console.log(jwtDecode(data.token));
+      if(data.status === 'Ok') {
+        // console.log(jwtDecode(data.token));
 
         set_logged_in({
           in: true,
@@ -71,8 +71,20 @@ function LoginWindow({ set_logged_in, set_disp }) {
         });
 
         set_disp('Logout');
-      } else {
-        console.log(data.status);
+        login_redirect.current = true;
+
+      } else if(data.status === 'NotExist') {
+        set_msg_info({
+          msg: 'Username does not exist',
+          msg_type: 'msg_fail'
+        });
+
+      } else if(data.status === 'NotMatch') {
+        set_msg_info({
+          msg: 'Password is incorrect',
+          msg_type: 'msg_fail'
+        });
+
       }
 
     } catch(error) {

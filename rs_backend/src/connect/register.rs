@@ -37,7 +37,7 @@ impl Connect {
             }
 
             Some(_) => {
-                self.log(&format!("Username '{}' already exists.", reg_info.username));
+                self.log(&format!("Username '{}' already exists", reg_info.username));
 
                 Ok(RegisterReturn::Exists)
             }

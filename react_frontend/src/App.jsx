@@ -1,13 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import './App.css'
 import Nav from './Nav.jsx'
 import RegisterWindow from './register/Register.jsx'
 import LoginWindow from './login/Login.jsx'
 import LogoutWindow from './login/Logout.jsx'
-
-function Home() {
-  return (<></>);
-}
+import ExpenseWindow from './expenses/Expenses.jsx'
 
 function App() {
   const [disp, set_disp] = useState('Expenses');
@@ -16,10 +13,11 @@ function App() {
     usn: '',
     token: ''
   });
+  const login_redirect = useRef(false);
 
   const items = {
     Expenses: {
-      Elem: Home,
+      Elem: ExpenseWindow,
       props: {}
     },
     Register: {
@@ -28,11 +26,11 @@ function App() {
     },
     Logout: {
       Elem: LogoutWindow,
-      props: { logged_in, set_logged_in, set_disp }
+      props: { logged_in, set_logged_in, set_disp, login_redirect }
     },
     Login: {
       Elem: LoginWindow,
-      props: { set_logged_in, set_disp }
+      props: { set_logged_in, set_disp, login_redirect }
     }
   };
 

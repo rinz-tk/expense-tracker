@@ -38,6 +38,12 @@ button {
   width: 100px;
 }
 
+.reg-form .exp-input {
+  display: inline-block;
+  width: 200px;
+  caret-color: transparent;
+}
+
 .msg {
   margin: 2rem 0;
 }
@@ -48,4 +54,8 @@ button {
 
 .msg_fail {
   color: #bf2a3e;
+}
+
+.msg_success .bold {
+  font-weight: bold;
 }
