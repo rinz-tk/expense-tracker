@@ -4,9 +4,11 @@ const nos = new Set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
 
 function ExpenseWindow() {
   const [exp_info, set_exp_info] = useState({
-    exp: '0.00'
+    exp: '0.00',
+    desc: '',
   });
 
+  const [neg, set_neg] = useState(false);
   const len = useRef(0);
   const st = useRef(false);
 
@@ -36,7 +38,7 @@ function ExpenseWindow() {
 
       len.current += 1;
 
-    } else if(e.key === 'Backspace') {
+    } else if(key === 'Backspace') {
       if(!st.current) { return; }
 
       const nexp = exp.slice(0, -3) + exp[exp.length - 2];
@@ -57,7 +59,17 @@ function ExpenseWindow() {
 
         if(len.current === 0) { st.current = false }
       }
+    } else if(key === '-') {
+      set_neg(!neg);
     }
+  }
+
+  function save_val(e) {
+    const { name, value } = e.target;
+    set_exp_info({
+      ...exp_info,
+      [name]: value
+    });
   }
 
   function onSubmit(e) {
@@ -76,7 +88,7 @@ function ExpenseWindow() {
             className='exp-input'
             name='exp'
             type='text'
-            value={exp_info.exp}
+            value={(neg ? '- ' : '') + '$ ' + exp_info.exp}
             onKeyDown={save_exp}
           />
         </div>
@@ -88,6 +100,8 @@ function ExpenseWindow() {
           <input
             name='desc'
             type='text'
+            value={exp_info.desc}
+            onChange={save_val}
           />
         </div>
 
