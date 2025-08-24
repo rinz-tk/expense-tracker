@@ -6,7 +6,6 @@ use futures_util::TryStreamExt;
 use std::path::Path;
 use std::collections::HashMap;
 use std::sync::Arc;
-use serde::{Serialize, Deserialize};
 
 use hyper::body::{Bytes, Frame, Incoming};
 use hyper::{Method, Request, Response, StatusCode};
@@ -15,38 +14,13 @@ use mime_guess;
 
 mod register;
 mod login;
+mod expense;
 
 use crate::WebError;
 
-// const ROOT: &str = "../react_frontend/dist";
 const ROOT: &str = "..";
 const INDEX: &str = "/react_frontend/dist/index.html";
 const API: &str = "/api";
-
-#[derive(Serialize, Deserialize)]
-struct InnerData {
-    left: bool,
-    right: bool
-}
-
-#[derive(Serialize, Deserialize)]
-struct Data {
-    a: i32,
-    b: Vec<i32>,
-    c: InnerData
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct RegisterInfo {
-    username: String,
-    password: String
-}
-
-// fn empty() -> Response<BoxBody<Bytes, WebError>> {
-//     Response::new(Empty::<Bytes>::new()
-//         .map_err(|e| match e {})
-//         .boxed())
-// }
 
 fn empty_err() -> Response<BoxBody<Bytes, WebError>> {
     let mut r = Response::new(Empty::<Bytes>::new()
@@ -113,18 +87,6 @@ impl Connect {
     async fn trigger_endpoint(&mut self, req: Request<Incoming>) -> Result<Response<BoxBody<Bytes, WebError>>, WebError> {
         let link = req.uri().path();
         match (req.method(), link.strip_prefix(API).unwrap()) {
-            (&Method::GET, "/get_data") => {
-                self.log("Endpoint get_data triggered");
-                Ok(full(serde_json::to_string(&Data {
-                    a: 0,
-                    b: vec![2, 5, 7, 9, 12],
-                    c: InnerData {
-                        left: true,
-                        right: false
-                    }
-                })?))
-            }
-
             (&Method::POST, "/register") => {
                 self.log("Endpoint register triggered");
                 match self.register_user(req).await {

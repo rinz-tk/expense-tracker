@@ -1,0 +1,31 @@
+.exp-nav {
+  width: fit-content;
+  overflow: auto;
+  max-width: 100%;
+  white-space: nowrap;
+  color: #d4d4d4;
+  background-color: #2d2d2d;
+  transition: background-color 0.25s;
+  margin-bottom: 2rem;
+}
+
+.exp-nav button {
+  margin: 0;
+  padding: 0.5rem;
+  width: 10rem;
+  font-size: 0.9rem;
+  background-color: #353535;
+  border: solid #353535;
+  border-width: 2px 2px 2px 0px;
+  cursor: pointer;
+  transition: background-color 0.25s;
+}
+
+.exp-nav button:first-child {
+  border-left-width: 2px;
+}
+
+.exp-nav button:hover,
+.exp-nav .highlighted {
+  background-color: transparent;
+}
