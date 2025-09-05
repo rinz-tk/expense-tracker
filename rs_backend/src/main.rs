@@ -1,10 +1,8 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::fs;
 use futures_util::lock::Mutex;
 use tokio::net::{TcpListener, TcpStream};
-use once_cell::sync::Lazy;
 
 use http_body_util::combinators::BoxBody;
 use hyper_util::rt::TokioIo;
@@ -17,13 +15,8 @@ mod connect;
 mod web_error;
 
 use connect::Connect;
+use connect::Expense;
 use web_error::WebError;
-
-static LOGIN_KEY: Lazy<Vec<u8>> = Lazy::new(|| {
-    let secret_file = "secret/secret_key";
-    fs::read(secret_file)
-        .expect(&format!("Unable to open {secret_file}"))
-});
 
 async fn process(wrapped_state: &Mutex<Connect>, req: Request<Incoming>) -> Result<Response<BoxBody<Bytes, WebError>>, WebError> {
     let mut state = wrapped_state.lock().await;
@@ -51,13 +44,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listener = TcpListener::bind(addr).await?;
 
     let mut count: u32 = 0;
+    let next_session_id: Arc<Mutex<u32>> = Arc::new(Mutex::new(0));
+    let sessions : Arc<Mutex<HashSet<u32>>> = Arc::new(Mutex::new(HashSet::new()));
     let registry: Arc<Mutex<HashMap<String, String>>> = Arc::new(Mutex::new(HashMap::new()));
+    let session_exp: Arc<Mutex<HashMap<u32, Vec<Expense>>>> = Arc::new(Mutex::new(HashMap::new()));
+    let user_exp: Arc<Mutex<HashMap<String, Vec<Expense>>>> = Arc::new(Mutex::new(HashMap::new()));
 
     loop {
         let (socket, _) = listener.accept().await?;
 
         count += 1;
-        let state = Connect::new(count, Arc::clone(&registry));
+        let state = Connect::new(
+            count,
+            Arc::clone(&sessions),
+            Arc::clone(&registry),
+            Arc::clone(&next_session_id),
+            Arc::clone(&session_exp),
+            Arc::clone(&user_exp),
+        );
         state.log_id("Begin");
 
         tokio::spawn(respond(socket, state));

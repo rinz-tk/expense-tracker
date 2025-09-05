@@ -4,7 +4,7 @@ use tokio::fs::File;
 use tokio_util::io::ReaderStream;
 use futures_util::TryStreamExt;
 use std::path::Path;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use hyper::body::{Bytes, Frame, Incoming};
@@ -17,6 +17,7 @@ mod login;
 mod expense;
 
 use crate::WebError;
+pub use expense::Expense;
 
 const ROOT: &str = "..";
 const INDEX: &str = "/react_frontend/dist/index.html";
@@ -49,13 +50,26 @@ fn full<T: Into<Bytes>>(data: T) -> Response<BoxBody<Bytes, WebError>> {
 pub struct Connect {
     id: u32,
     num: u32,
+    next_session_id: Arc<Mutex<u32>>,
 
-    registry: Arc<Mutex<HashMap<String, String>>>
+    sessions: Arc<Mutex<HashSet<u32>>>,
+    registry: Arc<Mutex<HashMap<String, String>>>,
+    session_exp: Arc<Mutex<HashMap<u32, Vec<Expense>>>>,
+    user_exp: Arc<Mutex<HashMap<String, Vec<Expense>>>>,
 }
 
 impl Connect {
-    pub fn new(id: u32, registry: Arc<Mutex<HashMap<String, String>>>) -> Connect {
-        Connect { id: id, num: 0, registry: registry }
+    pub fn new(id: u32, sessions: Arc<Mutex<HashSet<u32>>>, registry: Arc<Mutex<HashMap<String, String>>>,
+        next_session_id: Arc<Mutex<u32>>, session_exp: Arc<Mutex<HashMap<u32, Vec<Expense>>>>, user_exp: Arc<Mutex<HashMap<String, Vec<Expense>>>>) -> Connect {
+        Connect { 
+            id: id,
+            num: 0,
+            next_session_id: next_session_id,
+            sessions: sessions,
+            registry: registry,
+            session_exp: session_exp,
+            user_exp: user_exp,
+        }
     }
 
     pub fn log_id(&self, msg: &str) {
@@ -99,6 +113,22 @@ impl Connect {
                 self.log("Endpoint login triggered");
                 match self.login_user(req).await {
                     Ok(data) => Ok(full(serde_json::to_string(&data)?)),
+                    Err(e) => Err(e)
+                }
+            }
+
+            (&Method::POST, "/add_expense") => {
+                self.log("Endpoint add expense triggered");
+                match self.add_expense(req).await {
+                    Ok(data) => Ok(full(serde_json::to_string(&data)?)),
+                    Err(e) => Err(e)
+                }
+            }
+
+            (&Method::GET, "/get_expenses") => {
+                self.log("Endpoint get expenses triggered");
+                match self.get_expenses(req).await {
+                    Ok(data) => Ok(full(data)),
                     Err(e) => Err(e)
                 }
             }

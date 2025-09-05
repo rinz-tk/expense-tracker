@@ -1,12 +1,12 @@
-function LogoutWindow({ logged_in, set_logged_in, set_disp, login_redirect }) {
+function LogoutWindow({ logged_in, set_logged_in, set_disp, login_redirect, token }) {
   function logout() {
     set_logged_in({
       in: false,
       usn: '',
-      token: ''
     });
 
     set_disp('Login');
+    token.current = null;
   }
 
   let msg = (<></>);

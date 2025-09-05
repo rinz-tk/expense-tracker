@@ -11,14 +11,14 @@ function App() {
   const [logged_in, set_logged_in] = useState({
     in: false,
     usn: '',
-    token: ''
   });
   const login_redirect = useRef(false);
+  const token = useRef(null);
 
   const items = {
     Expenses: {
       Elem: ExpenseWindow,
-      props: {}
+      props: { token }
     },
     Register: {
       Elem: RegisterWindow,
@@ -26,11 +26,11 @@ function App() {
     },
     Logout: {
       Elem: LogoutWindow,
-      props: { logged_in, set_logged_in, set_disp, login_redirect }
+      props: { logged_in, set_logged_in, set_disp, login_redirect, token }
     },
     Login: {
       Elem: LoginWindow,
-      props: { set_logged_in, set_disp, login_redirect }
+      props: { set_logged_in, set_disp, login_redirect, token }
     }
   };
 

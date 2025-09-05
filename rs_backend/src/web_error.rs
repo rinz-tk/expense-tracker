@@ -4,8 +4,7 @@ use std::io;
 use hyper;
 use serde_json;
 use jsonwebtoken as jwt;
-
-// pub type DynError = Box<dyn error::Error + Send + Sync + 'static>;
+use serde_qs;
 
 #[derive(Debug)]
 pub enum WebErrorKind {
@@ -14,6 +13,7 @@ pub enum WebErrorKind {
     Io,
     SerdeJSON,
     JWT,
+    SerdeQs,
 }
 
 #[derive(Debug)]
@@ -71,6 +71,15 @@ impl From<jwt::errors::Error> for WebError {
         WebError {
             msg: value.to_string(),
             kind: WebErrorKind::JWT
+        }
+    }
+}
+
+impl From<serde_qs::Error> for WebError {
+    fn from(value: serde_qs::Error) -> Self {
+        WebError {
+            msg: value.to_string(),
+            kind: WebErrorKind::SerdeQs
         }
     }
 }

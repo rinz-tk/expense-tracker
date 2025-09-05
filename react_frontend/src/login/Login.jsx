@@ -1,7 +1,7 @@
 import { useState } from 'react';
-// import { jwtDecode } from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
-function LoginWindow({ set_logged_in, set_disp, login_redirect }) {
+function LoginWindow({ set_logged_in, set_disp, login_redirect, token }) {
   const [login_info, set_login_info] = useState({
     username: '',
     password: ''
@@ -62,12 +62,12 @@ function LoginWindow({ set_logged_in, set_disp, login_redirect }) {
       const data = await response.json();
 
       if(data.status === 'Ok') {
-        // console.log(jwtDecode(data.token));
+        console.log(jwtDecode(data.token));
+        token.current = data.token;
 
         set_logged_in({
           in: true,
           usn: login_info.username,
-          token: data.token
         });
 
         set_disp('Logout');
