@@ -153,22 +153,58 @@ function AddExpense({ logged_in, token }) {
       return;
     }
 
+    const username = new_split;
+
     try {
-      const response = await fetch('/api/validate_username');
+      const params = new URLSearchParams({ username });
+
+      const response = await fetch(`/api/validate_username?${params}`, {
+        method: 'GET',
+        headers: auth_header(token.current)
+      });
+
+      if(!response.ok) {
+        const err = await response.text();
+
+        set_msg_info({
+          msg: `Error: ${err}`,
+          msg_type: 'msg_fail'
+        });
+
+        return;
+      }
+
+      const result = await response.json();
+      console.log(result);
+
+      if(result === 'Valid') {
+        set_split_list((prev) => [...prev, new_split]);
+        set_new_split('');
+
+        set_msg_info({
+          msg: `Added user ${username} to the split`,
+          msg_type: 'msg_success'
+        });
+
+      } else if(result === 'Invalid') {
+        set_msg_info({
+          msg: `${username} is not a valid username`,
+          msg_type: 'msg_fail'
+        });
+
+      } else if(result === 'LoggedOut') {
+        set_msg_info({
+          msg: 'You must be logged in to add splits',
+          msg_type: 'msg_fail'
+        });
+      }
+
     } catch(error) {
       set_msg_info({
         msg: `Error: ${error}`,
         msg_type: 'msg_fail'
       });
     }
-
-    set_split_list((prev) => [...prev, new_split]);
-    set_new_split('');
-
-    set_msg_info({
-      msg: '',
-      msg_type: 'msg_success'
-    });
   }
 
   function split_list_display() {

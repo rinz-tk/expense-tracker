@@ -39,6 +39,19 @@ pub enum ValidateToken {
     Invalid
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct ValidateUserIn {
+    username: String
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum ValidateUserReturn {
+    Valid,
+    Invalid,
+    LoggedOut,
+    MissingName
+}
+
 static LOGIN_KEY: Lazy<Vec<u8>> = Lazy::new(|| {
     let secret_file = "secret/secret_key";
     fs::read(secret_file)
@@ -179,5 +192,44 @@ impl Connect {
         }
 
         ValidateToken::Valid(token)
+    }
+
+    pub async fn validate_username(&self, req: Request<Incoming>) -> ValidateUserReturn {
+        let token = match self.validate_token(&req).await {
+            ValidateToken::Valid(t) => t,
+            ValidateToken::Absent | ValidateToken::Invalid => {
+                return ValidateUserReturn::LoggedOut;
+            }
+        };
+
+        if let Token::Session(_) = token {
+            self.log("User is not logged in");
+            return ValidateUserReturn::LoggedOut;
+        }
+
+        let query = req.uri().query();
+        let query = match query {
+            Some(q) => q,
+            None => {
+                self.log("Query string missing from request");
+                return ValidateUserReturn::MissingName;
+            }
+        };
+
+        let username = match serde_qs::from_str::<ValidateUserIn>(query) {
+            Ok(u) => u.username,
+            Err(e) => {
+                self.log(&format!("Unable to parse query string: {e}"));
+                return ValidateUserReturn::MissingName;
+            }
+        };
+
+        if self.registry.lock().await.contains_key(&username) {
+            self.log(&format!("'{username}' is a valid username"));
+            ValidateUserReturn::Valid
+        } else {
+            self.log(&format!("'{username}' is not a valid username"));
+            ValidateUserReturn::Invalid
+        }
     }
 }

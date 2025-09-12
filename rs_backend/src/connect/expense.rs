@@ -94,15 +94,6 @@ impl Connect {
     }
 
     pub async fn get_expenses(&mut self, req: Request<Incoming>) -> Result<String, WebError> {
-        // let query = req.uri().query();
-        // let query = match query {
-        //     Some(q) => q,
-        //     None => {
-        //         let msg = "User ID required as query parameter";
-        //         return Err(WebError { msg: msg.to_string(), kind: WebErrorKind::Expense });
-        //     }
-        // };
-
         let mut new_session: bool = false;
         let token = match self.validate_token(&req).await {
             ValidateToken::Valid(t) => t,
@@ -114,8 +105,6 @@ impl Connect {
                 return Ok(serde_json::to_string(&GetExpReturn::Invalid)?);
             }
         };
-
-        // let exp_info = serde_qs::from_str(query);
 
         match token {
             Token::User(ref username) => {

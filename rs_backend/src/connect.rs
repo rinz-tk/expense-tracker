@@ -133,6 +133,12 @@ impl Connect {
                 }
             }
 
+            (&Method::GET, "/validate_username") => {
+                self.log("Endpoint validate username triggered");
+                let ret = serde_json::to_string(&self.validate_username(req).await)?;
+                Ok(full(ret))
+            }
+
             _ => {
                 let err_msg = format!("Route doesn't exist: {link}");
                 self.log(&err_msg);
