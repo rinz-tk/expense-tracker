@@ -15,9 +15,17 @@
 }
 
 .nav-bar.window {
-  width: 15%;
   overflow-y: auto;
   border-right: 3px solid #353535;
+  transition: width 0.4s ease;
+}
+
+.nav-bar.window.close {
+  width: 0%;
+}
+
+.nav-bar.window.open {
+  width: 15%;
 }
 
 .nav-bar.window button {
@@ -33,6 +41,17 @@
   transition: background-color 0.25s;
 }
 
+.nav-bar.window button.highlighted,
 .nav-bar.window button:hover {
   background-color: #353535;
+}
+
+.nav-bar.window span.close {
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.nav-bar.window span.open {
+  opacity: 1;
+  transition: opacity 0.4s ease-in;
 }

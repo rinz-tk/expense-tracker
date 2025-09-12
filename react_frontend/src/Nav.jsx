@@ -1,40 +1,39 @@
 import { useState } from 'react'
 import './Nav.css'
 
-function Nav({ set_disp, logged_in }) {
-  const [open, set_open] = useState(false);
+function Nav({ disp, set_disp, logged_in }) {
+  const [open, set_open] = useState(true);
 
   function clickNav() {
     set_open(prev => !prev);
   }
 
-  const cur_items = ['Expenses', 'Register'];
+  const items = ['Expenses', 'Register'];
 
   if(logged_in.in) {
-    cur_items.push('Logout');
+    items.push('Logout');
   } else {
-    cur_items.push('Login');
+    items.push('Login');
   }
 
-  let nav_bar = <div className="nav-bar button" onClick={clickNav}/>;
-
-  if(open) {
-    const items_list = cur_items.map((name, id) => (
-        <button key={id} onClick={() => set_disp(name)}>
+  const items_list = items.map((name, id) => (
+      <button className={name === disp ? 'highlighted' : ''} key={id} onClick={() => set_disp(name)}>
+        <span className={open ? 'open' : 'close'}>
           {name}
-        </button>
-      )
-    );
+        </span>
+      </button>
+    )
+  );
 
-    nav_bar = (
-      <>
-        <div className="nav-bar window">
-          {items_list}
-        </div>
-        {nav_bar}
-      </>
-    );
-  }
+  let nav_bar = (
+    <>
+      <div className={`nav-bar window ${open ? 'open' : 'close'}`}>
+        {items_list}
+      </div>
+      <div className="nav-bar button" onClick={clickNav}/>
+    </>
+  );
+
 
   return nav_bar;
 }

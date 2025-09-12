@@ -7,12 +7,12 @@ function ExpenseWindow({ token }) {
   const [tab, set_tab] = useState('Add Expense');
 
   const items = {
-    'Expense Sheet': {
-      Elem: ExpenseSheet,
-      props: { token }
-    },
     'Add Expense': {
       Elem: AddExpense,
+      props: { token }
+    },
+    'Expense Sheet': {
+      Elem: ExpenseSheet,
       props: { token }
     },
   }

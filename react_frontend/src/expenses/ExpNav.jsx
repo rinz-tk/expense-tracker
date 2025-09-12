@@ -1,7 +1,7 @@
 import './Expenses.css'
 
 function ExpNav({ tab, set_tab }) {
-  const cur_items = ['Expense Sheet', 'Add Expense'];
+  const cur_items = ['Add Expense', 'Expense Sheet'];
 
   const items_list = cur_items.map((name, id) => {
     let cls = '';

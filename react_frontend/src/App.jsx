@@ -48,7 +48,7 @@ function App() {
   return (
     <>
       <div id="app">
-        <Nav set_disp={set_disp} logged_in={logged_in}/>
+        <Nav disp={disp} set_disp={set_disp} logged_in={logged_in}/>
         <div id="disp">
           {set_disp_window()}
         </div>
