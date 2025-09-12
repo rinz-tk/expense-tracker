@@ -3,7 +3,7 @@ import { auth_header } from '../const';
 
 const nos = new Set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
 
-function AddExpense({ token }) {
+function AddExpense({ logged_in, token }) {
   const [exp_info, set_exp_info] = useState({
     exp: '0.00',
     desc: '',
@@ -17,6 +17,9 @@ function AddExpense({ token }) {
   const [neg, set_neg] = useState(false);
   const len = useRef(0);
   const st = useRef(false);
+
+  const [split_list, set_split_list] = useState([]);
+  const [new_split, set_new_split] = useState('');
 
   function save_exp(e) {
     const exp = exp_info.exp;
@@ -141,6 +144,53 @@ function AddExpense({ token }) {
     }
   }
 
+  async function add_split(_) {
+    if(new_split === '') {
+      set_msg_info({
+        msg: 'Enter the username with whom you wish to split the expense',
+        msg_type: 'msg_fail'
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/validate_username');
+    } catch(error) {
+      set_msg_info({
+        msg: `Error: ${error}`,
+        msg_type: 'msg_fail'
+      });
+    }
+
+    set_split_list((prev) => [...prev, new_split]);
+    set_new_split('');
+
+    set_msg_info({
+      msg: '',
+      msg_type: 'msg_success'
+    });
+  }
+
+  function split_list_display() {
+    if(split_list.length === 0) { return <></>; }
+
+    const sl_disp = split_list.slice(1).map((name) => (
+      <div className="item rest">
+        {name}
+      </div>
+    ));
+
+    return (
+      <div className="split-list">
+        <div>
+          <span className="label">Splitting with</span>
+          <span className="item">{split_list[0]}</span>
+        </div>
+        {sl_disp}
+      </div>
+    );
+  }
+
   return (
     <>
       <form className='reg-form' autoComplete='off' onSubmit={onSubmit}>
@@ -170,8 +220,28 @@ function AddExpense({ token }) {
           />
         </div>
 
+        {split_list_display()}
+
+        <div className='split'>
+          <button type='button' onClick={add_split}>
+            Split With
+          </button>
+          {logged_in.in ?
+            <input
+              name='new_split'
+              type='text'
+              value={new_split}
+              onChange={(e) => set_new_split(e.target.value)}
+            />
+           :
+            <input
+              value="Login Required"
+            disabled />
+          }
+        </div>
+
         <div>
-          <button type='submit'>Add Expense</button>
+          <button type='submit' className='submit'>Add Expense</button>
         </div>
 
       </form>

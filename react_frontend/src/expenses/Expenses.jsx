@@ -3,13 +3,13 @@ import ExpNav from './ExpNav.jsx'
 import AddExpense from './AddExpense.jsx'
 import ExpenseSheet from './ExpenseSheet.jsx'
 
-function ExpenseWindow({ token }) {
+function ExpenseWindow({ logged_in, token }) {
   const [tab, set_tab] = useState('Add Expense');
 
   const items = {
     'Add Expense': {
       Elem: AddExpense,
-      props: { token }
+      props: { logged_in, token }
     },
     'Expense Sheet': {
       Elem: ExpenseSheet,

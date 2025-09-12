@@ -78,10 +78,14 @@ function ExpenseSheet({ token }) {
     return (
       <table>
         <thead>
-          <th>Expense</th>
-          <th>Description</th>
+          <tr>
+            <th>Expense</th>
+            <th>Description</th>
+          </tr>
         </thead>
-        {sheet_data}
+        <tbody>
+          {sheet_data}
+        </tbody>
       </table>
     );
   }

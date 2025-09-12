@@ -18,7 +18,7 @@ function App() {
   const items = {
     Expenses: {
       Elem: ExpenseWindow,
-      props: { token }
+      props: { logged_in, token }
     },
     Register: {
       Elem: RegisterWindow,

@@ -124,7 +124,7 @@ function LoginWindow({ set_logged_in, set_disp, login_redirect, token }) {
         </div>
 
         <div>
-          <button type='submit'>Submit</button>
+          <button type='submit' className='submit'>Submit</button>
         </div>
         
       </form>

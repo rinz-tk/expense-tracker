@@ -108,7 +108,7 @@ function RegisterWindow() {
         </div>
 
         <div>
-          <button type='submit'>Submit</button>
+          <button type='submit' className='submit'>Submit</button>
         </div>
 
       </form>

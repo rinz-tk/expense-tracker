@@ -29,3 +29,26 @@
 .exp-nav .highlighted {
   background-color: transparent;
 }
+
+.split > button {
+  display: inline-block;
+  width: 150px;
+  margin: 0 50px 0 0;
+}
+
+.split-list {
+  color: #6e94c2;
+}
+
+.split-list .label {
+  display: inline-block;
+  width: 200px;
+}
+
+.split-list .item {
+  font-weight: bold;
+}
+
+.split-list .rest {
+  margin-left: 200px;
+}
