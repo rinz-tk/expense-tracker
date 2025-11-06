@@ -17,7 +17,7 @@ mod login;
 mod expense;
 
 use crate::WebError;
-pub use expense::Expense;
+pub use expense::{Expense, Pending, OwedExpense};
 
 const ROOT: &str = "..";
 const INDEX: &str = "/react_frontend/dist/index.html";
@@ -50,25 +50,40 @@ fn full<T: Into<Bytes>>(data: T) -> Response<BoxBody<Bytes, WebError>> {
 pub struct Connect {
     id: u32,
     num: u32,
+    next_user_id: Arc<Mutex<u32>>,
     next_session_id: Arc<Mutex<u32>>,
 
+    registry: Arc<Mutex<HashMap<String, (String, u32)>>>,
+    uids: Arc<Mutex<HashMap<u32, String>>>,
     sessions: Arc<Mutex<HashSet<u32>>>,
-    registry: Arc<Mutex<HashMap<String, String>>>,
+
+    user_exp: Arc<Mutex<HashMap<u32, Vec<Expense>>>>,
     session_exp: Arc<Mutex<HashMap<u32, Vec<Expense>>>>,
-    user_exp: Arc<Mutex<HashMap<String, Vec<Expense>>>>,
+
+    pending: Arc<Mutex<HashMap<u32, HashMap<u32, Pending>>>>,
+    owed: Arc<Mutex<HashMap<u32, HashMap<u32, Vec<OwedExpense>>>>>
 }
 
 impl Connect {
-    pub fn new(id: u32, sessions: Arc<Mutex<HashSet<u32>>>, registry: Arc<Mutex<HashMap<String, String>>>,
-        next_session_id: Arc<Mutex<u32>>, session_exp: Arc<Mutex<HashMap<u32, Vec<Expense>>>>, user_exp: Arc<Mutex<HashMap<String, Vec<Expense>>>>) -> Connect {
+    pub fn new(id: u32, sessions: Arc<Mutex<HashSet<u32>>>, registry: Arc<Mutex<HashMap<String, (String, u32)>>>, next_session_id: Arc<Mutex<u32>>,
+        next_user_id: Arc<Mutex<u32>>, uids: Arc<Mutex<HashMap<u32, String>>>, session_exp: Arc<Mutex<HashMap<u32, Vec<Expense>>>>,
+        user_exp: Arc<Mutex<HashMap<u32, Vec<Expense>>>>, pending: Arc<Mutex<HashMap<u32, HashMap<u32, Pending>>>>,
+        owed: Arc<Mutex<HashMap<u32, HashMap<u32, Vec<OwedExpense>>>>>) -> Connect {
         Connect { 
             id: id,
             num: 0,
-            next_session_id: next_session_id,
-            sessions: sessions,
-            registry: registry,
-            session_exp: session_exp,
-            user_exp: user_exp,
+            next_user_id,
+            next_session_id,
+
+            registry,
+            uids,
+            sessions,
+
+            user_exp,
+            session_exp,
+
+            pending,
+            owed
         }
     }
 
@@ -103,40 +118,37 @@ impl Connect {
         match (req.method(), link.strip_prefix(API).unwrap()) {
             (&Method::POST, "/register") => {
                 self.log("Endpoint register triggered");
-                match self.register_user(req).await {
-                    Ok(data) => Ok(full(serde_json::to_string(&data)?)),
-                    Err(e) => Err(e)
-                }
+
+                let data = self.register_user(req).await?;
+                Ok(full(serde_json::to_string(&data)?))
             }
 
             (&Method::POST, "/login") => {
                 self.log("Endpoint login triggered");
-                match self.login_user(req).await {
-                    Ok(data) => Ok(full(serde_json::to_string(&data)?)),
-                    Err(e) => Err(e)
-                }
+
+                let data = self.login_user(req).await?;
+                Ok(full(serde_json::to_string(&data)?))
             }
 
             (&Method::POST, "/add_expense") => {
                 self.log("Endpoint add expense triggered");
-                match self.add_expense(req).await {
-                    Ok(data) => Ok(full(serde_json::to_string(&data)?)),
-                    Err(e) => Err(e)
-                }
+
+                let data = self.add_expense(req).await?;
+                Ok(full(serde_json::to_string(&data)?))
             }
 
             (&Method::GET, "/get_expenses") => {
                 self.log("Endpoint get expenses triggered");
-                match self.get_expenses(req).await {
-                    Ok(data) => Ok(full(data)),
-                    Err(e) => Err(e)
-                }
+
+                let data = self.get_expenses(req).await?;
+                Ok(full(data))
             }
 
             (&Method::GET, "/validate_username") => {
                 self.log("Endpoint validate username triggered");
-                let ret = serde_json::to_string(&self.validate_username(req).await)?;
-                Ok(full(ret))
+
+                let data = self.validate_username(req).await?;
+                Ok(full(serde_json::to_string(&data)?))
             }
 
             _ => {

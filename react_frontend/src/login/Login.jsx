@@ -62,7 +62,9 @@ function LoginWindow({ set_logged_in, set_disp, login_redirect, token }) {
       const data = await response.json();
 
       if(data.status === 'Ok') {
-        console.log(jwtDecode(data.token));
+        console.log('token:', data.token);
+        console.log('decoded:', jwtDecode(data.token));
+
         token.current = data.token;
 
         set_logged_in({

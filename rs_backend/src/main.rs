@@ -44,11 +44,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listener = TcpListener::bind(addr).await?;
 
     let mut count: u32 = 0;
+    let next_user_id: Arc<Mutex<u32>> = Arc::new(Mutex::new(0));
     let next_session_id: Arc<Mutex<u32>> = Arc::new(Mutex::new(0));
+
+    let registry: Arc<Mutex<HashMap<String, (String, u32)>>> = Arc::new(Mutex::new(HashMap::new()));
+    let uids: Arc<Mutex<HashMap<u32, String>>> = Arc::new(Mutex::new(HashMap::new()));
     let sessions : Arc<Mutex<HashSet<u32>>> = Arc::new(Mutex::new(HashSet::new()));
-    let registry: Arc<Mutex<HashMap<String, String>>> = Arc::new(Mutex::new(HashMap::new()));
+
+    let user_exp: Arc<Mutex<HashMap<u32, Vec<Expense>>>> = Arc::new(Mutex::new(HashMap::new()));
     let session_exp: Arc<Mutex<HashMap<u32, Vec<Expense>>>> = Arc::new(Mutex::new(HashMap::new()));
-    let user_exp: Arc<Mutex<HashMap<String, Vec<Expense>>>> = Arc::new(Mutex::new(HashMap::new()));
+
+    let pending = Arc::new(Mutex::new(HashMap::new()));
+    let owed = Arc::new(Mutex::new(HashMap::new()));
 
     loop {
         let (socket, _) = listener.accept().await?;
@@ -59,8 +66,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Arc::clone(&sessions),
             Arc::clone(&registry),
             Arc::clone(&next_session_id),
+            Arc::clone(&next_user_id),
+            Arc::clone(&uids),
             Arc::clone(&session_exp),
             Arc::clone(&user_exp),
+            Arc::clone(&pending),
+            Arc::clone(&owed),
         );
         state.log_id("Begin");
 

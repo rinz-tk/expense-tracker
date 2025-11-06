@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { auth_header } from '../const';
+import { jwtDecode } from 'jwt-decode';
 
 const nos = new Set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
 
@@ -96,7 +97,8 @@ function AddExpense({ logged_in, token }) {
     const exp = Number(exp_info.exp.slice(0, -3)) * 100 + Number(exp_info.exp.slice(-2));
     const exp_send = {
       exp: exp,
-      desc: exp_info.desc
+      desc: exp_info.desc,
+      split_list
     };
 
     try {
@@ -123,6 +125,9 @@ function AddExpense({ logged_in, token }) {
       if(result.status === 'Ok' || result.status === 'New') {
         if(result.status === 'New') {
           token.current = result.token;
+
+          console.log('token:', result.token);
+          console.log('decoded:', jwtDecode(result.token));
         }
 
         set_msg_info({
@@ -148,6 +153,22 @@ function AddExpense({ logged_in, token }) {
     if(new_split === '') {
       set_msg_info({
         msg: 'Enter the username with whom you wish to split the expense',
+        msg_type: 'msg_fail'
+      });
+      return;
+    }
+
+    if(new_split === logged_in.usn) {
+      set_msg_info({
+        msg: 'Cannot enter your own username',
+        msg_type: 'msg_fail'
+      });
+      return;
+    }
+
+    if(split_list.includes(new_split)) {
+      set_msg_info({
+        msg: 'The same user cannot be added twice',
         msg_type: 'msg_fail'
       });
       return;
@@ -259,7 +280,7 @@ function AddExpense({ logged_in, token }) {
         {split_list_display()}
 
         <div className='split'>
-          <button type='button' onClick={add_split}>
+          <button type='button' onClick={add_split} disabled={!logged_in.in}>
             Split With
           </button>
           {logged_in.in ?

@@ -8,12 +8,13 @@ function Nav({ disp, set_disp, logged_in }) {
     set_open(prev => !prev);
   }
 
-  const items = ['Expenses', 'Register'];
+  const items = ['Expenses'];
 
   if(logged_in.in) {
     items.push('Logout');
   } else {
     items.push('Login');
+    items.push('Register');
   }
 
   const items_list = items.map((name, id) => (

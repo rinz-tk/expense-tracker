@@ -22,7 +22,7 @@ function App() {
     },
     Register: {
       Elem: RegisterWindow,
-      props: {}
+      props: { logged_in, set_logged_in, set_disp, login_redirect, token }
     },
     Logout: {
       Elem: LogoutWindow,

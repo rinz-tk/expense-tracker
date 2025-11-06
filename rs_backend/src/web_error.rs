@@ -1,6 +1,7 @@
 use std::error;
 use std::fmt;
 use std::io;
+use std::num::TryFromIntError;
 use hyper;
 use serde_json;
 use jsonwebtoken as jwt;
@@ -14,6 +15,11 @@ pub enum WebErrorKind {
     SerdeJSON,
     JWT,
     SerdeQs,
+    ValidateUsername,
+    AddExpense,
+    TryFromInt,
+    GetPending,
+    Access
 }
 
 #[derive(Debug)]
@@ -80,6 +86,15 @@ impl From<serde_qs::Error> for WebError {
         WebError {
             msg: value.to_string(),
             kind: WebErrorKind::SerdeQs
+        }
+    }
+}
+
+impl From<TryFromIntError> for WebError {
+    fn from(value: TryFromIntError) -> Self {
+        WebError {
+            msg: value.to_string(),
+            kind: WebErrorKind::TryFromInt
         }
     }
 }

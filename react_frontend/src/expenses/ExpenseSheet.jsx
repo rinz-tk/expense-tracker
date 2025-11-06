@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { auth_header } from '../const';
+import { jwtDecode } from 'jwt-decode';
 
 function ExpenseSheet({ token }) {
   const [expenses, set_expenses] = useState([]);
@@ -34,6 +35,9 @@ function ExpenseSheet({ token }) {
         if(result.status === 'Ok' || result.status === 'New') {
           if(result.status === 'New') {
             token.current = result.token;
+
+            console.log('token:', result.token);
+            console.log('decoded:', jwtDecode(result.token));
           }
 
           set_expenses(result.data);

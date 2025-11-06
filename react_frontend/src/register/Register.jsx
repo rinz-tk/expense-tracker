@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { jwtDecode } from 'jwt-decode';
 
-function RegisterWindow() {
+function RegisterWindow({ set_logged_in, set_disp, login_redirect, token }) {
   const [reg_info, set_reg_info] = useState({
     username: '',
     password: ''
@@ -59,12 +60,21 @@ function RegisterWindow() {
       }
 
       const result = await response.json();
-      if(result == 'Ok') {
-        set_msg_info({
-          msg: 'Successfully registered',
-          msg_type: 'msg_success'
+      if(result.status == 'Ok') {
+        console.log('token:', result.token);
+        console.log('decoded:', jwtDecode(result.token));
+
+        token.current = result.token;
+
+        set_logged_in({
+          in: true,
+          usn: reg_info.username,
         });
-      } else if(result == 'Exists') {
+
+        set_disp('Logout');
+        login_redirect.current = true;
+
+      } else if(result.status == 'Exists') {
         set_msg_info({
           msg: 'Username already exists',
           msg_type: 'msg_fail'

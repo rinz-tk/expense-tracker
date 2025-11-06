@@ -2,6 +2,8 @@ import { useState } from 'react';
 import ExpNav from './ExpNav.jsx'
 import AddExpense from './AddExpense.jsx'
 import ExpenseSheet from './ExpenseSheet.jsx'
+import Pending from './Pending.jsx';
+import Owed from './Owed.jsx';
 
 function ExpenseWindow({ logged_in, token }) {
   const [tab, set_tab] = useState('Add Expense');
@@ -15,6 +17,14 @@ function ExpenseWindow({ logged_in, token }) {
       Elem: ExpenseSheet,
       props: { token }
     },
+    'Pending': {
+      Elem: Pending,
+      props: {}
+    },
+    'Owed': {
+      Elem: Owed,
+      props: {}
+    },
   }
 
   function set_tab_screen() {
@@ -27,7 +37,7 @@ function ExpenseWindow({ logged_in, token }) {
 
   return (
     <>
-      <ExpNav tab={tab} set_tab={set_tab}/>
+      <ExpNav tab={tab} set_tab={set_tab} logged_in={logged_in}/>
       {set_tab_screen()}
     </>
   );

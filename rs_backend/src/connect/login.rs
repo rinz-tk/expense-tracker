@@ -10,7 +10,7 @@ use hyper::Request;
 use hyper::header::AUTHORIZATION;
 
 use super::Connect;
-use crate::web_error::WebError;
+use crate::web_error::{WebError, WebErrorKind};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct LoginInfo {
@@ -27,9 +27,9 @@ pub enum LoginReturn {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-#[serde(tag = "type", content = "token")]
+#[serde(tag = "type", content = "id")]
 pub enum Token {
-    User(String),
+    User(u32),
     Session(u32)
 }
 
@@ -48,8 +48,14 @@ struct ValidateUserIn {
 pub enum ValidateUserReturn {
     Valid,
     Invalid,
-    LoggedOut,
-    MissingName
+    LoggedOut
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(tag = "status", content = "pending_list")]
+pub enum GetPendingReturn {
+    Ok,
+    LoggedOut
 }
 
 static LOGIN_KEY: Lazy<Vec<u8>> = Lazy::new(|| {
@@ -112,19 +118,21 @@ impl Connect {
             }
         };
 
-        let registry = self.registry.lock().await;
-        let pass = match registry.get(&login_info.username) {
-            Some(p) => p.clone(),
-            None => {
-                self.log(&format!("Username {} does not exist", login_info.username));
-                return Ok(LoginReturn::NotExist);
+        let (pass, uid) = {
+            let registry = self.registry.lock().await;
+            match registry.get(&login_info.username) {
+                Some(p) => p.clone(),
+                None => {
+                    self.log(&format!("Username {} does not exist", login_info.username));
+                    return Ok(LoginReturn::NotExist);
+                }
             }
         };
 
         if login_info.password == pass {
             self.log(&format!("{} logged in", login_info.username));
 
-            let token = Token::User(login_info.username);
+            let token = Token::User(uid);
             let encoded_token = Self::encode_token(&token)?;
 
             Ok(LoginReturn::Ok(encoded_token))
@@ -181,12 +189,12 @@ impl Connect {
                 }
             }
 
-            Token::User(username) => {
-                if !self.registry.lock().await.contains_key(username) {
-                    self.log(&format!("Invalid username {username}"));
+            Token::User(uid) => {
+                if !self.uids.lock().await.contains_key(uid) {
+                    self.log(&format!("Invalid uid {uid}"));
                     return ValidateToken::Invalid;
                 } else {
-                    self.log(&format!("Authorization verified for user {username}"));
+                    self.log(&format!("Authorization verified for uid {uid}"));
                 }
             }
         }
@@ -194,42 +202,42 @@ impl Connect {
         ValidateToken::Valid(token)
     }
 
-    pub async fn validate_username(&self, req: Request<Incoming>) -> ValidateUserReturn {
+    pub async fn validate_username(&self, req: Request<Incoming>) -> Result<ValidateUserReturn, WebError> {
         let token = match self.validate_token(&req).await {
             ValidateToken::Valid(t) => t,
             ValidateToken::Absent | ValidateToken::Invalid => {
-                return ValidateUserReturn::LoggedOut;
+                return Ok(ValidateUserReturn::LoggedOut);
             }
         };
 
         if let Token::Session(_) = token {
             self.log("User is not logged in");
-            return ValidateUserReturn::LoggedOut;
+            return Ok(ValidateUserReturn::LoggedOut);
         }
 
         let query = req.uri().query();
         let query = match query {
             Some(q) => q,
             None => {
-                self.log("Query string missing from request");
-                return ValidateUserReturn::MissingName;
+                let msg = "Query string missing from request";
+                return Err(WebError { msg: msg.to_string(), kind: WebErrorKind::ValidateUsername});
             }
         };
 
         let username = match serde_qs::from_str::<ValidateUserIn>(query) {
             Ok(u) => u.username,
             Err(e) => {
-                self.log(&format!("Unable to parse query string: {e}"));
-                return ValidateUserReturn::MissingName;
+                self.log(&format!("Unable to parse query string: {query}"));
+                return Err(e.into());
             }
         };
 
         if self.registry.lock().await.contains_key(&username) {
             self.log(&format!("'{username}' is a valid username"));
-            ValidateUserReturn::Valid
+            Ok(ValidateUserReturn::Valid)
         } else {
             self.log(&format!("'{username}' is not a valid username"));
-            ValidateUserReturn::Invalid
+            Ok(ValidateUserReturn::Invalid)
         }
     }
 }
