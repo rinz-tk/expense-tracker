@@ -19,11 +19,11 @@ function ExpenseWindow({ logged_in, token }) {
     },
     'Pending': {
       Elem: Pending,
-      props: {}
+      props: { token }
     },
     'Owed': {
       Elem: Owed,
-      props: {}
+      props: { token }
     },
   }
 

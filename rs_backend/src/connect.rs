@@ -151,6 +151,13 @@ impl Connect {
                 Ok(full(serde_json::to_string(&data)?))
             }
 
+            (&Method::GET, "/get_pending") => {
+                self.log("Endpoint get pending triggered");
+
+                let data = self.get_pending(req).await?;
+                Ok(full(serde_json::to_string(&data)?))
+            }
+
             _ => {
                 let err_msg = format!("Route doesn't exist: {link}");
                 self.log(&err_msg);

@@ -8,7 +8,6 @@ use hyper::Request;
 
 use super::Connect;
 use super::login::{Token, ValidateToken};
-use crate::connect::login::GetPendingReturn;
 use crate::web_error::{WebError, WebErrorKind};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -55,6 +54,19 @@ pub enum AddExpReturn {
 pub enum GetExpReturn<'a> {
     Ok { data: &'a mut Vec<Expense> },
     New { data: &'a mut Vec<Expense>, token: String },
+    Invalid
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GetPendingItem {
+    target: String,
+    amt: u32,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(tag = "status", content = "pending_list")]
+pub enum GetPendingReturn {
+    Ok(Vec<GetPendingItem>),
     Invalid
 }
 
@@ -317,7 +329,7 @@ impl Connect {
         let token = match self.validate_token(&req).await {
             ValidateToken::Valid(t) => t,
             ValidateToken::Absent | ValidateToken::Invalid => {
-                return Ok(GetPendingReturn::LoggedOut);
+                return Ok(GetPendingReturn::Invalid);
             }
         };
 
@@ -325,26 +337,26 @@ impl Connect {
             Token::User(uid) => uid,
             Token::Session(_) => {
                 self.log("User is not logged in");
-                return Ok(GetPendingReturn::LoggedOut);
+                return Ok(GetPendingReturn::Invalid);
             }
         };
 
-        {
+        let list = {
             let mut pending_list = self.pending.lock().await;
             let pending = pending_list.entry(uid).or_insert_with(HashMap::new);
 
             let uids = self.uids.lock().await;
-            let x: Vec<()> = pending.iter().map(|(&id, list)| {
+            pending.iter().map(|(&id, p)| {
                 let username = uids.get(&id)
                     .ok_or_else(|| WebError {
                         msg: "Invalid uid in pending list".to_string(),
                         kind: WebErrorKind::GetPending })?
                     .clone();
 
-                Ok(())
-            }).collect::<Result<Vec<()>, WebError>>()?;
-        }
+                Ok(GetPendingItem { target: username, amt: p.amt})
+            }).collect::<Result<Vec<GetPendingItem>, WebError>>()?
+        };
 
-        Ok(GetPendingReturn::Ok)
+        Ok(GetPendingReturn::Ok(list))
     }
 }

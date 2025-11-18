@@ -51,13 +51,6 @@ pub enum ValidateUserReturn {
     LoggedOut
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(tag = "status", content = "pending_list")]
-pub enum GetPendingReturn {
-    Ok,
-    LoggedOut
-}
-
 static LOGIN_KEY: Lazy<Vec<u8>> = Lazy::new(|| {
     let secret_file = "secret/secret_key";
     fs::read(secret_file)

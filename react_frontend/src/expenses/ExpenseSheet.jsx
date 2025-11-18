@@ -45,6 +45,7 @@ function ExpenseSheet({ token }) {
             ...msg_info,
             show_msg: false
           });
+
         } else if(result.status === 'Invalid') {
           set_msg_info({
             show_msg: true,
