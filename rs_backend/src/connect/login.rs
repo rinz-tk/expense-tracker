@@ -82,7 +82,7 @@ impl Connect {
             .map_err(|e| e.into())
     }
 
-    async fn get_next_session_id(&mut self) -> u32 {
+    async fn get_next_session_id(&self) -> u32 {
         let mut next_session_id = self.next_session_id.lock().await;
 
         let ret: u32 = *next_session_id;
@@ -90,7 +90,7 @@ impl Connect {
         ret
     }
 
-    pub async fn new_session_token(&mut self) -> Token {
+    pub async fn new_session_token(&self) -> Token {
         let id = self.get_next_session_id().await;
         self.log(&format!("Creating new session token with ID: {id}"));
 
@@ -99,7 +99,7 @@ impl Connect {
         Token::Session(id)
     }
 
-    pub async fn login_user(&mut self, req: Request<Incoming>) -> Result<LoginReturn, WebError> {
+    pub async fn login_user(&self, req: Request<Incoming>) -> Result<LoginReturn, WebError> {
         let body = req.into_body().collect().await?.to_bytes();
 
         let login_info = serde_json::from_slice(&body);

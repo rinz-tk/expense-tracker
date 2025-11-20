@@ -30,7 +30,7 @@ impl Connect {
         ret
     }
 
-    pub async fn register_user(&mut self, req: Request<Incoming>) -> Result<RegisterReturn, WebError> {
+    pub async fn register_user(&self, req: Request<Incoming>) -> Result<RegisterReturn, WebError> {
         let body = req.into_body().collect().await?.to_bytes();
 
         let reg_info = serde_json::from_slice(&body);

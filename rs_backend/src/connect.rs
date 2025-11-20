@@ -113,7 +113,7 @@ impl Connect {
         }
     }
 
-    async fn trigger_endpoint(&mut self, req: Request<Incoming>) -> Result<Response<BoxBody<Bytes, WebError>>, WebError> {
+    async fn trigger_endpoint(&self, req: Request<Incoming>) -> Result<Response<BoxBody<Bytes, WebError>>, WebError> {
         let link = req.uri().path();
         match (req.method(), link.strip_prefix(API).unwrap()) {
             (&Method::POST, "/register") => {

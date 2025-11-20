@@ -71,7 +71,7 @@ pub enum GetPendingReturn {
 }
 
 impl Connect {
-    pub async fn add_expense(&mut self, req: Request<Incoming>) -> Result<AddExpReturn, WebError> {
+    pub async fn add_expense(&self, req: Request<Incoming>) -> Result<AddExpReturn, WebError> {
         let mut new_session: bool = false;
         let token = match self.validate_token(&req).await {
             ValidateToken::Valid(t) => t,
@@ -138,7 +138,7 @@ impl Connect {
         }
     }
 
-    async fn add_pending_expenses(&mut self, uid: u32, exp_id: usize, desc: &String, mut exp_total: u32, split_list: &Vec<String>, base_val: u32, mut extra: u32) -> Result<(), WebError> {
+    async fn add_pending_expenses(&self, uid: u32, exp_id: usize, desc: &String, mut exp_total: u32, split_list: &Vec<String>, base_val: u32, mut extra: u32) -> Result<(), WebError> {
         let exp_total_base = exp_total;
         let mut id_list = Vec::new();
 
@@ -279,7 +279,7 @@ impl Connect {
         Ok(exp)
     }
 
-    pub async fn get_expenses(&mut self, req: Request<Incoming>) -> Result<String, WebError> {
+    pub async fn get_expenses(&self, req: Request<Incoming>) -> Result<String, WebError> {
         let mut new_session: bool = false;
         let token = match self.validate_token(&req).await {
             ValidateToken::Valid(t) => t,
@@ -325,7 +325,7 @@ impl Connect {
         }
     }
 
-    pub async fn get_pending(&mut self, req: Request<Incoming>) -> Result<GetPendingReturn, WebError> {
+    pub async fn get_pending(&self, req: Request<Incoming>) -> Result<GetPendingReturn, WebError> {
         let token = match self.validate_token(&req).await {
             ValidateToken::Valid(t) => t,
             ValidateToken::Absent | ValidateToken::Invalid => {
