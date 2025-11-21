@@ -172,7 +172,7 @@ impl Connect {
         let link = req.uri().path();
         let pt = Path::new(link);
         let ret = match pt.parent().map(|p| p.to_str().unwrap()) {
-            None | Some(INDEX) => {
+            None => {
                 self.log("Requested index");
                 self.serve_file(&format!("{INDEX}")).await
             }
