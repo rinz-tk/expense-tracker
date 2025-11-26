@@ -1,3 +1,4 @@
 react_frontend/dist/
 rs_backend/target/
 rs_backend/secret/
+go_backend/go_backend
