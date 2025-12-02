@@ -245,7 +245,7 @@ impl Connect {
                     e.exp -= exp_take;
                     let desc = e.desc.clone();
 
-                    self.log(&format!("[User {}] owes [User {}] amound {} for '{}', settled {}", uid, id, pe.exp + exp_take, &desc, exp_take));
+                    self.log(&format!("[User {}] owes [User {}] amount {} for '{}', settled {}", uid, id, pe.exp + exp_take, &desc, exp_take));
 
                     match pe.partial_id {
                         None => {
