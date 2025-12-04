@@ -52,3 +52,17 @@
 .split-list .rest {
   margin-left: 200px;
 }
+
+.pending-list .pending-amt {
+  color: #6e94c2;
+}
+
+.pending-list .pending-target {
+  color: #6e94c2;
+  font-weight: bold;
+}
+
+.pending-list button {
+  width: 100px;
+  margin: 0 0 0 10px;
+}

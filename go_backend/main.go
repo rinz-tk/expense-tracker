@@ -33,6 +33,7 @@ func main() {
 
 	uids_read_chan := make(chan mm.MapRead[uint32, string])
 	uids_write_chan := make(chan mm.MapWrite[uint32, string])
+	uids_check_chan := make(chan mm.MapCheck[uint32])
 
 	sessions_write_chan := make(chan mm.MapWrite[uint32, struct{}])
 	sessions_check_chan := make(chan mm.MapCheck[uint32])
@@ -52,6 +53,8 @@ func main() {
 			UidsReadSend: uids_read_chan,
 			UidsReadRecv: make(chan mm.MapReadVal[string]),
 			UidsWriteSend: uids_write_chan,
+			UidsCheckSend: uids_check_chan,
+			UidsCheckRecv: make(chan bool),
 
 			SessionsWriteSend: sessions_write_chan,
 			SessionsCheckSend: sessions_check_chan,
@@ -65,7 +68,7 @@ func main() {
 	go gen_id(session_id_ch)
 
 	go mm.ManageMap(registry_read_chan, registry_write_chan, registry_check_chan)
-	go mm.ManageMap(uids_read_chan, uids_write_chan, nil)
+	go mm.ManageMap(uids_read_chan, uids_write_chan, uids_check_chan)
 	go mm.ManageMap(nil, sessions_write_chan, sessions_check_chan)
 
 	addr := "127.0.0.1:3003"

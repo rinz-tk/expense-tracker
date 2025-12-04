@@ -58,7 +58,7 @@ func (c *Connect) register_user(r *http.Request) (RegisterReturn, error) {
 	}
 
 	token := Token{ Type: "User", Id: id }
-	encoded_token, err := c.encode_token(token)
+	encoded_token, err := c.encode_token(&token)
 	if err != nil { return RegisterReturn{}, err }
 
 	return RegisterReturn{ Status: "Ok", Token: encoded_token }, nil

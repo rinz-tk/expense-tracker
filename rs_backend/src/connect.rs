@@ -158,6 +158,13 @@ impl Connect {
                 Ok(full(serde_json::to_string(&data)?))
             }
 
+            (&Method::POST, "/settle_pending") => {
+                self.log("Endpoint settle pending triggered");
+
+                let data = self.settle_pending_all(req).await?;
+                Ok(full(serde_json::to_string(&data)?))
+            }
+
             _ => {
                 let err_msg = format!("Route doesn't exist: {link}");
                 self.log(&err_msg);

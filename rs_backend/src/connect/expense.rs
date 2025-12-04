@@ -59,6 +59,7 @@ pub enum GetExpReturn<'a> {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GetPendingItem {
+    target_id: u32,
     target: String,
     amt: u32,
 }
@@ -67,6 +68,17 @@ pub struct GetPendingItem {
 #[serde(tag = "status", content = "pending_list")]
 pub enum GetPendingReturn {
     Ok(Vec<GetPendingItem>),
+    Invalid
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct SettlePendingIn {
+    target: u32
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum SettlePendingReturn {
+    Ok,
     Invalid
 }
 
@@ -171,7 +183,7 @@ impl Connect {
 
             self.log(&format!("[User {}] owes [User {}] an amount {}", id, uid, exp_base));
 
-            let exp = self.settle_pending(&mut pending, &mut expenses, uid, id, exp_base).await?;
+            let exp = self.settle_pending(&mut pending, &mut expenses, uid, id, Some(exp_base)).await?;
 
             let mut partial_id = None;
             if exp_base > exp {
@@ -218,63 +230,69 @@ impl Connect {
         Ok(())
     }
 
-    async fn settle_pending(&self, pending: &mut HashMap<u32, HashMap<u32, Pending>>, expenses: &mut HashMap<u32, Vec<Expense>>, uid: u32, id: u32, exp_base: u32) -> Result<u32, WebError> {
+    async fn settle_pending(&self, pending: &mut HashMap<u32, HashMap<u32, Pending>>, expenses: &mut HashMap<u32, Vec<Expense>>, uid: u32, id: u32, exp_base: Option<u32>) -> Result<u32, WebError> {
+        let m = match pending.get_mut(&uid) {
+            Some(m) => m,
+            None => return Ok(exp_base.unwrap_or(0))
+        };
+
+        let p = match m.get_mut(&id) {
+            Some(p) => p,
+            None => return Ok(exp_base.unwrap_or(0))
+        };
+
+        // self.log(&format!("Pending expenses of [User {}] towards [User {}]: {:?}", uid, id, p));
+
+        let exp_base = exp_base.unwrap_or(p.amt);
         let mut exp = exp_base;
+        let mut settled_p = false;
 
-        if let Some(m) = pending.get_mut(&uid) {
-            let mut settled_p = false;
+        let mut remove_from = None;
+        let exp_list_len = p.exp_list.len();
 
-            if let Some(p) = m.get_mut(&id) {
-                // self.log(&format!("Pending expenses of [User {}] towards [User {}]: {:?}", uid, id, p));
+        for (i, pe) in p.exp_list.iter_mut().rev().enumerate() {
+            let exp_take = min(exp, pe.exp);
+            exp -= exp_take;
+            pe.exp -= exp_take;
 
-                let mut remove_from = None;
-                let exp_list_len = p.exp_list.len();
+            if pe.exp == 0 { remove_from = Some(exp_list_len - i - 1); }
 
-                for (i, pe) in p.exp_list.iter_mut().rev().enumerate() {
-                    let exp_take = min(exp, pe.exp);
-                    exp -= exp_take;
-                    pe.exp -= exp_take;
+            let e = expenses.get_mut(&id)
+                .ok_or_else(|| WebError { msg: format!("No expenses exist for uid {}", id), kind: WebErrorKind::Access })?
+                .get_mut(pe.exp_id)
+                .ok_or_else(|| WebError { msg: format!("Invalid expense {} for uid {}", pe.exp_id, id), kind: WebErrorKind::Access })?;
 
-                    if pe.exp == 0 { remove_from = Some(exp_list_len - i - 1); }
+            e.exp -= exp_take;
+            let desc = e.desc.clone();
 
-                    let e = expenses.get_mut(&id)
-                        .ok_or_else(|| WebError { msg: format!("No expenses exist for uid {}", id), kind: WebErrorKind::Access })?
-                        .get_mut(pe.exp_id)
-                        .ok_or_else(|| WebError { msg: format!("Invalid expense {} for uid {}", pe.exp_id, id), kind: WebErrorKind::Access })?;
+            self.log(&format!("[User {}] owes [User {}] amount {} for '{}', settled {}", uid, id, pe.exp + exp_take, &desc, exp_take));
 
-                    e.exp -= exp_take;
-                    let desc = e.desc.clone();
-
-                    self.log(&format!("[User {}] owes [User {}] amount {} for '{}', settled {}", uid, id, pe.exp + exp_take, &desc, exp_take));
-
-                    match pe.partial_id {
-                        None => {
-                            expenses.entry(uid).or_insert_with(Vec::new).push(Expense { exp: exp_take, desc });
-                            if pe.exp != 0 { pe.partial_id = Some(expenses.len() - 1); }
-                        }
-
-                        Some(partial_id) => {
-                            let partial_exp = &mut expenses.get_mut(&uid)
-                                .ok_or_else(|| WebError { msg: format!("No expenses exist for uid {}", uid), kind: WebErrorKind::Access })?
-                                .get_mut(partial_id)
-                                .ok_or_else(|| WebError { msg: format!("Invalid expense {} for uid {}", partial_id, uid), kind: WebErrorKind::Access })?
-                                .exp;
-
-                            *partial_exp += exp_take;
-                        }
-                    }
-
-                    if exp == 0 { break; }
+            match pe.partial_id {
+                None => {
+                    expenses.entry(uid).or_insert_with(Vec::new).push(Expense { exp: exp_take, desc });
+                    if pe.exp != 0 { pe.partial_id = Some(expenses.len() - 1); }
                 }
 
-                if let Some(remove_from) = remove_from { p.exp_list.truncate(remove_from); }
-                p.amt -= exp_base - exp;
+                Some(partial_id) => {
+                    let partial_exp = &mut expenses.get_mut(&uid)
+                        .ok_or_else(|| WebError { msg: format!("No expenses exist for uid {}", uid), kind: WebErrorKind::Access })?
+                        .get_mut(partial_id)
+                        .ok_or_else(|| WebError { msg: format!("Invalid expense {} for uid {}", partial_id, uid), kind: WebErrorKind::Access })?
+                        .exp;
 
-                if p.amt == 0 { settled_p = true; }
+                    *partial_exp += exp_take;
+                }
             }
 
-            if settled_p { m.remove(&id); }
+            if exp == 0 { break; }
         }
+
+        if let Some(remove_from) = remove_from { p.exp_list.truncate(remove_from); }
+        p.amt -= exp_base - exp;
+
+        if p.amt == 0 { settled_p = true; }
+
+        if settled_p { m.remove(&id); }
 
         Ok(exp)
     }
@@ -353,10 +371,45 @@ impl Connect {
                         kind: WebErrorKind::GetPending })?
                     .clone();
 
-                Ok(GetPendingItem { target: username, amt: p.amt})
+                Ok(GetPendingItem { target_id: id, target: username, amt: p.amt})
             }).collect::<Result<Vec<GetPendingItem>, WebError>>()?
         };
 
         Ok(GetPendingReturn::Ok(list))
+    }
+
+    pub async fn settle_pending_all(&self, req: Request<Incoming>) -> Result<SettlePendingReturn, WebError> {
+        let token = match self.validate_token(&req).await {
+            ValidateToken::Valid(t) => t,
+            _ => { return Ok(SettlePendingReturn::Invalid); }
+        };
+
+        let uid = match token {
+            Token::User(uid) => uid,
+            Token::Session(_) => {
+                self.log("User is not logged in");
+                return Ok(SettlePendingReturn::Invalid);
+            }
+        };
+
+        let body = req.into_body().collect().await?.to_bytes();
+
+        let settle_info = serde_json::from_slice(&body);
+        let settle_info: SettlePendingIn = match settle_info {
+            Ok(s) => s,
+            Err(e) => {
+                self.log(&format!("Error while parsing JSON: {:?}", body));
+                return Err(e.into());
+            }
+        };
+
+        self.log(&format!("Settling all pending expenses between [User {}] and [User {}]", uid, settle_info.target));
+
+        let mut pending = self.pending.lock().await;
+        let mut expenses = self.user_exp.lock().await;
+
+        let _ = self.settle_pending(&mut pending, &mut expenses, uid, settle_info.target, None).await;
+
+        Ok(SettlePendingReturn::Ok)
     }
 }

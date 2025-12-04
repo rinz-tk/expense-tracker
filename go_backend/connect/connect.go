@@ -29,6 +29,8 @@ type Connect struct {
 	UidsReadSend chan mm.MapRead[uint32, string]
 	UidsReadRecv chan mm.MapReadVal[string]
 	UidsWriteSend chan mm.MapWrite[uint32, string]
+	UidsCheckSend chan mm.MapCheck[uint32]
+	UidsCheckRecv chan bool
 
 	SessionsWriteSend chan mm.MapWrite[uint32, struct{}]
 	SessionsCheckSend chan mm.MapCheck[uint32]
