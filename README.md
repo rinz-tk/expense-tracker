@@ -2,15 +2,6 @@
 
 A full-stack expense tracking application that allows users to record expenses, split costs between multiple users, and settle balances over time. This project includes two backend implementations, one in Go and one in Rust, both exposing identical functionality. The frontend is built using React.
 
-## Motivation
-
-This project was created as a practical learning experience to:
-
-- Explore backend development in both Rust and Golang
-- Understand architectural differences between the two languages
-- Build a real and useful system rather than a toy example
-- Practice frontend–backend integration using React
-
 ## Tech Stack
 
 ### Frontend
@@ -117,8 +108,6 @@ The system automatically balances mutual debts between users.
    - User B owes User A $5  
 
 2. Later, User B pays $10 and splits it with User A  
-   - User B sees a red $10 expense  
-   - User A owes User B $5  
 
 The system balances these automatically:
 
@@ -127,9 +116,9 @@ The system balances these automatically:
 
 This eliminates the need for circular or duplicate settlements.
 
-## Building & Running the Backend
+## Building & Running the Application
 
-You can build and run the backend servers using the provided helper scripts.
+You can build and run the servers using the provided helper scripts. Both of these scripts also build the frontend.
 
 ### Rust Backend
 
@@ -142,22 +131,4 @@ This script builds the Rust backend using `cargo build --release` and runs it au
 ./run_go.sh
 
 This script builds the Go backend using `go build` and runs the resulting binary.
-
-## Manual Build Commands (Optional)
-
-### Rust
-
-cargo build --release  
-./target/release/expense-tracker
-
-### Go
-
-go build  
-./expense-tracker
-
-## Running the Application
-
-1. Start either the Rust or Go backend  
-2. Start the React frontend  
-3. Interact with the system through the UI
 
