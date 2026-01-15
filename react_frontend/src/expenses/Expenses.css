@@ -53,6 +53,10 @@
   margin-left: 200px;
 }
 
+.pending-list .pending-entry {
+  margin-bottom: 20px;
+}
+
 .pending-list .pending-amt {
   color: #6e94c2;
 }
@@ -62,7 +66,61 @@
   font-weight: bold;
 }
 
+.pending-list .pending-detail-amt,
+.pending-list .pending-detail-desc {
+  font-weight: bold;
+}
+
+.pending-list .details {
+  margin-left: 30px;
+}
+
 .pending-list button {
+  margin: 0;
+  padding: 0.3rem;
+  background-color: #353535;
+  border: solid #1d1d1d;
+  border-width: 2px 2px 2px 2px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.25s;
+}
+
+.pending-list button:hover {
+  background-color: #2d2d2d;
+}
+
+.pending-list .pending-settle {
+  position: relative;
+  width: 140px;
+  padding-right: 0px;
+  padding-left: 18px;
+  z-index: 1;
+}
+
+.pending-list .pending-switch-settle {
+  background-color: #303030;
+  position: relative;
+  width: 20px;
+  padding-left: 0;
+  padding-right: 0;
+  margin-right: -20px;
+  z-index: 2;
+}
+
+.expense-sheet .over {
+  color: #bf2a3e;
+}
+
+.expense-sheet .equal {
+  color: #6e94c2;
+}
+
+.pending-form {
+  display: inline;
+}
+
+.pending-form > input {
   width: 100px;
-  margin: 0 0 0 10px;
+  margin-left: 10px;
 }

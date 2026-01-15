@@ -17,7 +17,7 @@ mod login;
 mod expense;
 
 use crate::WebError;
-pub use expense::{Expense, Pending, OwedExpense};
+pub use expense::{Expense, Pending};
 
 const ROOT: &str = "..";
 const INDEX: &str = "/react_frontend/dist/index.html";
@@ -61,14 +61,14 @@ pub struct Connect {
     session_exp: Arc<Mutex<HashMap<u32, Vec<Expense>>>>,
 
     pending: Arc<Mutex<HashMap<u32, HashMap<u32, Pending>>>>,
-    owed: Arc<Mutex<HashMap<u32, HashMap<u32, Vec<OwedExpense>>>>>
+    owed: Arc<Mutex<HashMap<u32, HashSet<u32>>>>
 }
 
 impl Connect {
     pub fn new(id: u32, sessions: Arc<Mutex<HashSet<u32>>>, registry: Arc<Mutex<HashMap<String, (String, u32)>>>, next_session_id: Arc<Mutex<u32>>,
         next_user_id: Arc<Mutex<u32>>, uids: Arc<Mutex<HashMap<u32, String>>>, session_exp: Arc<Mutex<HashMap<u32, Vec<Expense>>>>,
         user_exp: Arc<Mutex<HashMap<u32, Vec<Expense>>>>, pending: Arc<Mutex<HashMap<u32, HashMap<u32, Pending>>>>,
-        owed: Arc<Mutex<HashMap<u32, HashMap<u32, Vec<OwedExpense>>>>>) -> Connect {
+        owed: Arc<Mutex<HashMap<u32, HashSet<u32>>>>) -> Connect {
         Connect { 
             id: id,
             num: 0,

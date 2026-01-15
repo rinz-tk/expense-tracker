@@ -39,7 +39,7 @@ button {
   width: 100px;
 }
 
-.reg-form .exp-input {
+.exp-input {
   display: inline-block;
   width: 200px;
   caret-color: transparent;

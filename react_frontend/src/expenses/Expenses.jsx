@@ -7,6 +7,7 @@ import Owed from './Owed.jsx';
 
 function ExpenseWindow({ logged_in, token }) {
   const [tab, set_tab] = useState('Add Expense');
+  const [elem_key, set_elem_key] = useState(0);
 
   const items = {
     'Add Expense': {
@@ -27,17 +28,22 @@ function ExpenseWindow({ logged_in, token }) {
     },
   }
 
+  function update_tab(t) {
+    set_tab(t);
+    set_elem_key(x => x + 1);
+  }
+
   function set_tab_screen() {
     const { Elem, props } = items[tab];
 
     return (
-      <Elem {...props} />
+      <Elem key={elem_key} {...props} />
     );
   }
 
   return (
     <>
-      <ExpNav tab={tab} set_tab={set_tab} logged_in={logged_in}/>
+      <ExpNav tab={tab} update_tab={update_tab} logged_in={logged_in}/>
       {set_tab_screen()}
     </>
   );

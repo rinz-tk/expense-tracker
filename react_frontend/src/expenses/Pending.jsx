@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { auth_header } from '../const';
+import { number_field } from './AddExpense';
 
 function Pending({ token }) {
   const [pending, set_pending] = useState([]);
@@ -9,6 +10,7 @@ function Pending({ token }) {
     msg_type: 'msg_success'
   });
   const [freeze, set_freeze] = useState(false);
+  const [select_list, set_select_list] = useState([]);
 
   useEffect(() => {
     get_pending();
@@ -37,6 +39,17 @@ function Pending({ token }) {
 
       if(result.status === 'Ok') {
         set_pending(result.pending_list);
+
+        const sl = result.pending_list.map(_ => {
+          return {
+            custom: false,
+            exp: '0.00',
+            len: 0,
+            st: false
+          };
+        });
+        set_select_list(sl);
+
         set_msg_info({
           ...msg_info,
           show_msg: false
@@ -59,15 +72,37 @@ function Pending({ token }) {
     }
   }
 
-  async function settle(ind) {
+  function select(ind) {
+    set_select_list(sl => {
+      const sl_updated = [...sl];
+      const o = sl_updated[ind];
+
+      sl_updated[ind] = {
+        ...o,
+        custom: !o.custom
+      };
+
+      return sl_updated;
+    });
+  }
+
+  async function settle(e, ind) {
+    e.preventDefault();
     set_freeze(true);
+
+    let exp = null;
+    const s = select_list[ind];
+    if(s.custom) {
+      exp = Number(s.exp.slice(0, -3)) * 100 + Number(s.exp.slice(-2));
+    }
 
     try {
       const response = await fetch('/api/settle_pending', {
         method: 'POST',
         headers: auth_header(token.current),
         body: JSON.stringify({
-          target: pending[ind].target_id
+          target: pending[ind].target_id,
+          exp
         })
       });
 
@@ -75,6 +110,7 @@ function Pending({ token }) {
         const err = await response.text();
       
         set_msg_info({
+          show_msg: true,
           msg: `Error: ${err}`,
           msg_type: 'msg_fail'
         });
@@ -98,6 +134,7 @@ function Pending({ token }) {
 
     } catch(error) {
       set_msg_info({
+        show_msg: true,
         msg: `Error: ${error}`,
         msg_type: 'msg_fail'
       });
@@ -114,16 +151,61 @@ function Pending({ token }) {
     );
 
   } else {
-    const pending_data = pending.map((pe, ind) => (
-      <div>
-        {'You owe '}
-        <span className='pending-amt'>${pe.amt / 100}</span>
-        {' to '}
-        <span className='pending-target'>{pe.target}</span>
-        {" "}
-        <button type='button' onClick={() => settle(ind)} disabled={freeze}>Settle</button>
-      </div>
-    ));
+    const pending_data = pending.map((pe, ind) => {
+      const details = pe.details.map(d => (
+        <div>
+          <span className='pending-detail-amt'>${d.exp / 100}</span>
+          {' for '}
+          <span className='pending-detail-desc'>{d.desc}</span>
+        </div>
+      ));
+
+      return (
+        <div className='pending-entry'>
+          <div>
+            {'You owe '}
+            <span className='pending-amt'>${pe.amt / 100}</span>
+            {' to '}
+            <span className='pending-target'>{pe.target}</span>
+            {' '}
+            <button className='pending-switch-settle' type='button' onClick={() => select(ind)} disabled={freeze}>&#8203;</button>
+
+            <form className='pending-form' autoComplete='off' onSubmit={(e) => settle(e, ind)}>
+              <button className='pending-settle' type='submit' disabled={freeze}>
+                {!select_list[ind].custom
+                  ?
+                    'Settle All'
+                  :
+                    'Settle Custom'
+                }
+              </button>
+              
+              {select_list[ind].custom &&
+                <input
+                  className='exp-input'
+                  name='exp'
+                  type='text'
+                  value={'$ ' + select_list[ind].exp}
+                  onKeyDown={number_field(select_list[ind], (o) => {
+                    set_select_list(sl => {
+                      const sl_updated = [...sl];
+                      sl_updated[ind] = o;
+
+                      return sl_updated;
+                    });
+                  })}
+                />
+              }
+            </form>
+            
+          </div>
+
+          <div className='details'>
+            {details}
+          </div>
+        </div>
+      );
+    });
 
     return (
       <div className='pending-list'>

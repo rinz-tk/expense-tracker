@@ -1,6 +1,6 @@
 import './Expenses.css'
 
-function ExpNav({ tab, set_tab, logged_in }) {
+function ExpNav({ tab, update_tab, logged_in }) {
   const cur_items = ['Add Expense', 'Expense Sheet'];
   if(logged_in.in) {
     cur_items.push('Pending');
@@ -12,7 +12,7 @@ function ExpNav({ tab, set_tab, logged_in }) {
     if(name === tab) { cls = 'highlighted'; }
 
     return (
-      <button className={cls} key={id} onClick={() => set_tab(name)}>
+      <button className={cls} key={id} onClick={() => update_tab(name)}>
         {name}
       </button>
     )

@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::cmp::min;
 
 use hyper::body::Incoming;
@@ -13,7 +13,8 @@ use crate::web_error::{WebError, WebErrorKind};
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Expense {
     exp: u32,
-    desc: String
+    desc: String,
+    target: u32
 }
 
 #[derive(Debug)]
@@ -27,11 +28,6 @@ struct PendingExpense {
 pub struct Pending {
     amt: u32,
     exp_list: Vec<PendingExpense>
-}
-
-pub struct OwedExpense {
-    exp: u32,
-    exp_id: usize
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -58,10 +54,17 @@ pub enum GetExpReturn<'a> {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+struct GetPendingDetailsItem {
+    exp: u32,
+    desc: String
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct GetPendingItem {
     target_id: u32,
     target: String,
     amt: u32,
+    details: Vec<GetPendingDetailsItem>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -73,12 +76,26 @@ pub enum GetPendingReturn {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct SettlePendingIn {
-    target: u32
+    target: u32,
+    exp: Option<u32>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum SettlePendingReturn {
     Ok,
+    Invalid
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GetOwedItem {
+    target: String,
+    amt: u32
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(tag = "status", content = "owed_list")]
+pub enum GetOwedReturn {
+    Ok(Vec<GetOwedItem>),
     Invalid
 }
 
@@ -111,8 +128,13 @@ impl Connect {
             Token::User(uid) => {
                 let num = u32::try_from(exp_info.split_list.len())? + 1;
                 let base_val = exp_info.exp / num;
+                let mut target = base_val;
+
                 let mut extra = exp_info.exp % num;
-                if extra > 0 { extra -= 1; }
+                if extra > 0 {
+                    extra -= 1;
+                    target += 1;
+                }
 
                 self.log(&format!("Amount {} split between {} people for {} each", exp_info.exp, num, base_val));
 
@@ -121,7 +143,8 @@ impl Connect {
                     let expenses = user_exp.entry(uid).or_insert_with(Vec::new);
                     expenses.push(Expense {
                         exp: exp_info.exp,
-                        desc: exp_info.desc.clone()
+                        desc: exp_info.desc.clone(),
+                        target
                     });
 
                     self.log(&format!("Added expense for [User {}]: {:?}", uid, expenses[expenses.len() - 1]));
@@ -136,7 +159,8 @@ impl Connect {
                 let expenses = session_exp.entry(id).or_insert_with(Vec::new);
                 expenses.push(Expense {
                     exp: exp_info.exp,
-                    desc: exp_info.desc
+                    desc: exp_info.desc,
+                    target: exp_info.exp
                 });
 
                 self.log(&format!("Added expense for session ID {}: {:?}", id, expenses[expenses.len() - 1]));
@@ -172,7 +196,6 @@ impl Connect {
         let mut pending = self.pending.lock().await;
         let mut expenses = self.user_exp.lock().await;
         let mut owed = self.owed.lock().await;
-        let owed_map = owed.entry(uid).or_insert_with(HashMap::new);
 
         for id in id_list {
             let mut exp_base = base_val;
@@ -183,7 +206,7 @@ impl Connect {
 
             self.log(&format!("[User {}] owes [User {}] an amount {}", id, uid, exp_base));
 
-            let exp = self.settle_pending(&mut pending, &mut expenses, uid, id, Some(exp_base)).await?;
+            let exp = self.settle_pending(&mut pending, &mut expenses, &mut owed, uid, id, Some(exp_base)).await?;
 
             let mut partial_id = None;
             if exp_base > exp {
@@ -191,7 +214,7 @@ impl Connect {
                 exp_total -= diff;
 
                 let e = expenses.entry(id).or_insert_with(Vec::new);
-                e.push(Expense { exp: diff, desc: desc.clone() });
+                e.push(Expense { exp: diff, desc: desc.clone(), target: exp_base });
                 partial_id = Some(e.len() - 1);
             }
 
@@ -209,10 +232,9 @@ impl Connect {
                 partial_id
             });
 
-            owed_map.entry(id).or_insert_with(Vec::new).push(OwedExpense {
-                exp,
-                exp_id
-            });
+            owed.entry(uid)
+                .or_insert_with(HashSet::new)
+                .insert(id);
         }
 
         if exp_total_base > exp_total {
@@ -230,7 +252,7 @@ impl Connect {
         Ok(())
     }
 
-    async fn settle_pending(&self, pending: &mut HashMap<u32, HashMap<u32, Pending>>, expenses: &mut HashMap<u32, Vec<Expense>>, uid: u32, id: u32, exp_base: Option<u32>) -> Result<u32, WebError> {
+    async fn settle_pending(&self, pending: &mut HashMap<u32, HashMap<u32, Pending>>, expenses: &mut HashMap<u32, Vec<Expense>>, owed: &mut HashMap<u32, HashSet<u32>>, uid: u32, id: u32, exp_base: Option<u32>) -> Result<u32, WebError> {
         let m = match pending.get_mut(&uid) {
             Some(m) => m,
             None => return Ok(exp_base.unwrap_or(0))
@@ -269,8 +291,9 @@ impl Connect {
 
             match pe.partial_id {
                 None => {
-                    expenses.entry(uid).or_insert_with(Vec::new).push(Expense { exp: exp_take, desc });
-                    if pe.exp != 0 { pe.partial_id = Some(expenses.len() - 1); }
+                    let e = expenses.entry(uid).or_insert_with(Vec::new);
+                    e.push(Expense { exp: exp_take, desc, target: pe.exp + exp_take });
+                    if pe.exp != 0 { pe.partial_id = Some(e.len() - 1); }
                 }
 
                 Some(partial_id) => {
@@ -291,8 +314,12 @@ impl Connect {
         p.amt -= exp_base - exp;
 
         if p.amt == 0 { settled_p = true; }
-
-        if settled_p { m.remove(&id); }
+        if settled_p {
+            m.remove(&id);
+            owed.get_mut(&id)
+                .ok_or_else(|| WebError { msg: format!("[User {id}] is not owed anything"), kind: WebErrorKind::Access })?
+                .remove(&uid);
+        }
 
         Ok(exp)
     }
@@ -315,7 +342,7 @@ impl Connect {
                 let mut user_exp = self.user_exp.lock().await;
                 let expenses = user_exp.entry(username.clone()).or_insert_with(Vec::new);
 
-                self.log(&format!("Returning expenses for user {username}: {:?}", expenses));
+                self.log(&format!("Returning expenses for user {username}"));
 
                 let data = if new_session {
                     GetExpReturn::New { data: expenses, token: Self::encode_token(&token)? }
@@ -330,7 +357,7 @@ impl Connect {
                 let mut session_exp = self.session_exp.lock().await;
                 let expenses = session_exp.entry(id).or_insert_with(Vec::new);
 
-                self.log(&format!("Returning expenses for session ID {id}: {:?}", expenses));
+                self.log(&format!("Returning expenses for session ID {id}"));
 
                 let data = if new_session {
                     GetExpReturn::New { data: expenses, token: Self::encode_token(&token)? }
@@ -361,6 +388,8 @@ impl Connect {
 
         let list = {
             let mut pending_list = self.pending.lock().await;
+            let expenses = self.user_exp.lock().await;
+
             let pending = pending_list.entry(uid).or_insert_with(HashMap::new);
 
             let uids = self.uids.lock().await;
@@ -371,7 +400,16 @@ impl Connect {
                         kind: WebErrorKind::GetPending })?
                     .clone();
 
-                Ok(GetPendingItem { target_id: id, target: username, amt: p.amt})
+                let id_expenses = expenses.get(&id)
+                    .ok_or_else(|| WebError { msg: format!("No expenses exist for uid {}", id), kind: WebErrorKind::Access })?;
+
+                let details = p.exp_list.iter().map(|pe| {
+                    let e = id_expenses.get(pe.exp_id)
+                        .ok_or_else(|| WebError { msg: format!("Invalid expense {} for uid {}", pe.exp_id, id), kind: WebErrorKind::Access })?;
+                    Ok(GetPendingDetailsItem { exp: pe.exp, desc: e.desc.clone() })
+                }).collect::<Result<Vec<GetPendingDetailsItem>, WebError>>()?;
+
+                Ok(GetPendingItem { target_id: id, target: username, amt: p.amt, details })
             }).collect::<Result<Vec<GetPendingItem>, WebError>>()?
         };
 
@@ -403,13 +441,41 @@ impl Connect {
             }
         };
 
-        self.log(&format!("Settling all pending expenses between [User {}] and [User {}]", uid, settle_info.target));
+        match settle_info.exp {
+            Some(e) => self.log(&format!("Settling pending expenses between [User {}] and [User {}] with amount {}", uid, settle_info.target, e)),
+            None => self.log(&format!("Settling all pending expenses between [User {}] and [User {}]", uid, settle_info.target))
+        }
 
         let mut pending = self.pending.lock().await;
         let mut expenses = self.user_exp.lock().await;
+        let mut owed = self.owed.lock().await;
 
-        let _ = self.settle_pending(&mut pending, &mut expenses, uid, settle_info.target, None).await;
+        let _ = self.settle_pending(&mut pending, &mut expenses, &mut owed, uid, settle_info.target, settle_info.exp).await;
 
         Ok(SettlePendingReturn::Ok)
+    }
+
+    pub async fn get_owed(&self, req: Request<Incoming>) -> Result<GetOwedReturn, WebError> {
+        let token = match self.validate_token(&req).await {
+            ValidateToken::Valid(t) => t,
+            ValidateToken::Absent | ValidateToken::Invalid => {
+                return Ok(GetOwedReturn::Invalid);
+            }
+        };
+
+        let uid = match token {
+            Token::User(uid) => uid,
+            Token::Session(_) => {
+                self.log("User is not logged in");
+                return Ok(GetOwedReturn::Invalid);
+            }
+        };
+
+        let list = {
+            let pending = self.pending.lock().await;
+            let owed = self.owed.lock().await;
+        };
+
+        Ok(GetOwedReturn::Invalid)
     }
 }

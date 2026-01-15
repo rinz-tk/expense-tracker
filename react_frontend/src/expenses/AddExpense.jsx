@@ -2,12 +2,63 @@ import { useState, useRef } from 'react';
 import { auth_header } from '../const';
 import { jwtDecode } from 'jwt-decode';
 
-const nos = new Set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+export function number_field(exp_obj, exp_setter) {
+  const nos = new Set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+
+  return (e) => {
+    let { exp, len, st } = exp_obj;
+    const key = e.key;
+
+    if(nos.has(key)) {
+      if(!st && key !== '0') {
+          st = true;
+      }
+
+      if(!st) { return; }
+
+      let nexp = exp.slice(0, -3) + exp[exp.length -2] + '.' + exp[exp.length -1] + key;
+      if(len < 3) {
+        nexp = nexp.slice(-4);
+      }
+
+      exp_setter({
+        ...exp_obj,
+        exp: nexp,
+        len: len + 1,
+        st
+      });
+
+    } else if(key === 'Backspace') {
+      if(!st) { return; }
+
+      let nexp = exp.slice(0, -3) + exp[exp.length - 2];
+      if(len <= 3) {
+        nexp = '0.' + nexp;
+      } else {
+        nexp = nexp.slice(0, -2) + '.' + nexp.slice(-2);
+      }
+
+      if(len > 0) {
+        len -= 1;
+        if(len === 0) { st = false }
+      }
+
+      exp_setter({
+        ...exp_obj,
+        exp: nexp,
+        len,
+        st
+      });
+    }
+  }
+}
 
 function AddExpense({ logged_in, token }) {
   const [exp_info, set_exp_info] = useState({
     exp: '0.00',
     desc: '',
+    len: 0,
+    st: false
   });
 
   const [msg_info, set_msg_info] = useState({
@@ -15,64 +66,10 @@ function AddExpense({ logged_in, token }) {
     msg_type: 'msg_success'
   });
 
-  const [neg, set_neg] = useState(false);
-  const len = useRef(0);
-  const st = useRef(false);
-
   const [split_list, set_split_list] = useState([]);
   const [new_split, set_new_split] = useState('');
 
-  function save_exp(e) {
-    const exp = exp_info.exp;
-    const key = e.key;
-
-    if(nos.has(key)) {
-      if(!st.current && key !== '0') {
-          st.current = true;
-      }
-
-      if(!st.current) { return; }
-
-      const nexp = exp.slice(0, -3) + exp[exp.length -2] + '.' + exp[exp.length -1] + key;
-      if(len.current < 3) {
-        set_exp_info({
-          ...exp_info,
-          exp: nexp.slice(-4)
-        });
-      } else {
-        set_exp_info({
-          ...exp_info,
-          exp: nexp
-        });
-      }
-
-      len.current += 1;
-
-    } else if(key === 'Backspace') {
-      if(!st.current) { return; }
-
-      const nexp = exp.slice(0, -3) + exp[exp.length - 2];
-      if(len.current <= 3) {
-        set_exp_info({
-          ...exp_info,
-          exp: '0.' + nexp
-        });
-      } else {
-        set_exp_info({
-          ...exp_info,
-          exp: nexp.slice(0, -2) + '.' + nexp.slice(-2)
-        });
-      }
-
-      if(len.current > 0) {
-        len.current -= 1;
-
-        if(len.current === 0) { st.current = false }
-      }
-    } else if(key === '-') {
-      set_neg(!neg);
-    }
-  }
+  const save_exp = number_field(exp_info, set_exp_info);
 
   function save_val(e) {
     const { name, value } = e.target;
@@ -134,6 +131,17 @@ function AddExpense({ logged_in, token }) {
           msg: 'Expense added',
           msg_type: 'msg_success'
         });
+
+        set_exp_info({
+          exp: '0.00',
+          desc: '',
+          len: 0,
+          st: false
+        });
+
+        set_split_list([]);
+        set_new_split('');
+
       } else if(result.status === 'Invalid') {
         set_msg_info({
           msg: 'Invalid authentication',
@@ -260,7 +268,7 @@ function AddExpense({ logged_in, token }) {
             className='exp-input'
             name='exp'
             type='text'
-            value={(neg ? '- ' : '') + '$ ' + exp_info.exp}
+            value={'$ ' + exp_info.exp}
             onKeyDown={save_exp}
           />
         </div>

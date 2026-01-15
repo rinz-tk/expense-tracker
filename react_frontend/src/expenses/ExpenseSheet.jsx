@@ -73,15 +73,24 @@ function ExpenseSheet({ token }) {
     );
 
   } else {
-    const sheet_data = expenses.map(exp => (
-      <tr>
-        <td>{`\$ ${exp.exp / 100}`}</td>
-        <td>{exp.desc}</td>
-      </tr>
-    ));
+    const sheet_data = expenses.map(exp => {
+      let classname = "equal";
+      if(exp.target < exp.exp) {
+        classname = "over";
+      } else if(exp.target > exp.exp) {
+        classname = "under";
+      }
+
+      return (
+        <tr className={classname}>
+          <td>{`\$ ${exp.exp / 100}`}</td>
+          <td>{exp.desc}</td>
+        </tr>
+      );
+    });
 
     return (
-      <table>
+      <table className="expense-sheet">
         <thead>
           <tr>
             <th>Expense</th>
