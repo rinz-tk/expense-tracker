@@ -7,6 +7,7 @@ import (
 	"net/http"
 	con "go_backend/connect"
 	mm "go_backend/connect/map_manager"
+	em "go_backend/connect/expense_manager"
 )
 
 func gen_id(id_ch chan<- uint32) {
@@ -38,6 +39,9 @@ func main() {
 	sessions_write_chan := make(chan mm.MapWrite[uint32, struct{}])
 	sessions_check_chan := make(chan mm.MapCheck[uint32])
 
+	session_exp_add_chan := make(chan em.AddExpense)
+	session_exp_get_chan := make(chan em.GetExpense)
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		c := con.Connect {
 			Id: <-id_ch,
@@ -59,6 +63,10 @@ func main() {
 			SessionsWriteSend: sessions_write_chan,
 			SessionsCheckSend: sessions_check_chan,
 			SessionsCheckRecv: make(chan bool),
+
+			SessionExpAddSend: session_exp_add_chan,
+			SessionExpGetSend: session_exp_get_chan,
+			SessionExpGetRecv: make(chan em.GetExpReturnWithError),
 		}
 		c.Route(w, r)
 	})
@@ -70,6 +78,7 @@ func main() {
 	go mm.ManageMap(registry_read_chan, registry_write_chan, registry_check_chan)
 	go mm.ManageMap(uids_read_chan, uids_write_chan, uids_check_chan)
 	go mm.ManageMap(nil, sessions_write_chan, sessions_check_chan)
+	go em.ManageSessionExp(session_exp_add_chan, session_exp_get_chan)
 
 	addr := "127.0.0.1:3003"
 	fmt.Printf("Connect to -> http://%v\n", addr)

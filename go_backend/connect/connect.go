@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	mm "go_backend/connect/map_manager"
+	em "go_backend/connect/expense_manager"
 )
 
 const ROOT = ".."
@@ -35,6 +36,10 @@ type Connect struct {
 	SessionsWriteSend chan mm.MapWrite[uint32, struct{}]
 	SessionsCheckSend chan mm.MapCheck[uint32]
 	SessionsCheckRecv chan bool
+
+	SessionExpAddSend chan em.AddExpense
+	SessionExpGetSend chan em.GetExpense
+	SessionExpGetRecv chan em.GetExpReturnWithError
 }
 
 func (c *Connect) Log(msg string) {
@@ -63,6 +68,22 @@ func (c *Connect) trigger_endpoint(w http.ResponseWriter, r *http.Request) error
 		if err != nil { return err }
 
 		out, err = json.Marshal(data)
+		if err != nil { return err }
+
+	case r.Method == "POST" && endpoint == "add_expense":
+		c.Log("Endpoint add expense triggered")
+
+		data, err := c.add_expense(r)
+		if err != nil { return err }
+
+		out, err = json.Marshal(data)
+		if err != nil { return err }
+
+	case r.Method == "GET" && endpoint == "get_expenses":
+		c.Log("Endpoint get expenses triggered")
+
+		var err error
+		out, err = c.get_expenses(r)
 		if err != nil { return err }
 
 	default:
