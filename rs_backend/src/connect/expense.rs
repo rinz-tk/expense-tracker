@@ -338,11 +338,11 @@ impl Connect {
         };
 
         match token {
-            Token::User(ref username) => {
+            Token::User(uid) => {
                 let mut user_exp = self.user_exp.lock().await;
-                let expenses = user_exp.entry(username.clone()).or_insert_with(Vec::new);
+                let expenses = user_exp.entry(uid).or_insert_with(Vec::new);
 
-                self.log(&format!("Returning expenses for user {username}"));
+                self.log(&format!("Returning expenses for user {uid}"));
 
                 let data = if new_session {
                     GetExpReturn::New { data: expenses, token: Self::encode_token(&token)? }

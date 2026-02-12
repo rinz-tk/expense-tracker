@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	mm "go_backend/connect/map_manager"
+	rm "go_backend/connect/register_manager"
 	em "go_backend/connect/expense_manager"
 )
 
@@ -21,9 +22,9 @@ type Connect struct {
 	UidChan chan uint32
 	SessionIdChan chan uint32
 
-	RegistryReadSend chan mm.MapRead[string, RegistryVal]
-	RegistryReadRecv chan mm.MapReadVal[RegistryVal]
-	RegistryWriteSend chan mm.MapWrite[string, RegistryVal]
+	RegistryReadSend chan mm.MapRead[string, rm.RegistryVal]
+	RegistryReadRecv chan mm.MapReadVal[rm.RegistryVal]
+	RegistryWriteSend chan mm.MapWrite[string, rm.RegistryVal]
 	RegistryCheckSend chan mm.MapCheck[string]
 	RegistryCheckRecv chan bool
 
@@ -37,7 +38,7 @@ type Connect struct {
 	SessionsCheckSend chan mm.MapCheck[uint32]
 	SessionsCheckRecv chan bool
 
-	SessionExpAddSend chan em.AddExpense
+	SessionExpAddSend chan em.AddSessionExpense
 	SessionExpGetSend chan em.GetExpense
 	SessionExpGetRecv chan em.GetExpReturnWithError
 }

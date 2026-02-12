@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	mm "go_backend/connect/map_manager"
+	rm "go_backend/connect/register_manager"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -76,7 +77,7 @@ func (c *Connect) login_user(r *http.Request) (LoginReturn, error) {
 		return LoginReturn{}, err
 	}
 
-	c.RegistryReadSend <- mm.MapRead[string, RegistryVal]{
+	c.RegistryReadSend <- mm.MapRead[string, rm.RegistryVal]{
 		From: login_info.Username,
 		WriteTo: c.RegistryReadRecv,
 	}

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	con "go_backend/connect"
 	mm "go_backend/connect/map_manager"
+	rm "go_backend/connect/register_manager"
 	em "go_backend/connect/expense_manager"
 )
 
@@ -28,8 +29,8 @@ func main() {
 	uid_ch := make(chan uint32)
 	session_id_ch := make(chan uint32)
 
-	registry_read_chan := make(chan mm.MapRead[string, con.RegistryVal])
-	registry_write_chan := make(chan mm.MapWrite[string, con.RegistryVal])
+	registry_read_chan := make(chan mm.MapRead[string, rm.RegistryVal])
+	registry_write_chan := make(chan mm.MapWrite[string, rm.RegistryVal])
 	registry_check_chan := make(chan mm.MapCheck[string])
 
 	uids_read_chan := make(chan mm.MapRead[uint32, string])
@@ -39,7 +40,7 @@ func main() {
 	sessions_write_chan := make(chan mm.MapWrite[uint32, struct{}])
 	sessions_check_chan := make(chan mm.MapCheck[uint32])
 
-	session_exp_add_chan := make(chan em.AddExpense)
+	session_exp_add_chan := make(chan em.AddSessionExpense)
 	session_exp_get_chan := make(chan em.GetExpense)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -49,7 +50,7 @@ func main() {
 			SessionIdChan: session_id_ch,
 
 			RegistryReadSend: registry_read_chan,
-			RegistryReadRecv: make(chan mm.MapReadVal[con.RegistryVal]),
+			RegistryReadRecv: make(chan mm.MapReadVal[rm.RegistryVal]),
 			RegistryWriteSend: registry_write_chan,
 			RegistryCheckSend: registry_check_chan,
 			RegistryCheckRecv: make(chan bool),

@@ -6,12 +6,8 @@ import (
 	"net/http"
 
 	mm "go_backend/connect/map_manager"
+	rm "go_backend/connect/register_manager"
 )
-
-type RegistryVal struct {
-	Password string
-	Uid uint32
-}
 
 type RegisterInfo struct {
 	Username string `json:"username"`
@@ -44,9 +40,9 @@ func (c *Connect) register_user(r *http.Request) (RegisterReturn, error) {
 
 	c.Log(fmt.Sprintf("Adding username '%v' with password '%v' and uid '%v'", reg_info.Username, reg_info.Password, id))
 
-	c.RegistryWriteSend <- mm.MapWrite[string, RegistryVal]{
+	c.RegistryWriteSend <- mm.MapWrite[string, rm.RegistryVal]{
 		From: reg_info.Username,
-		To: RegistryVal{
+		To: rm.RegistryVal{
 			Password: reg_info.Password,
 			Uid: id,
 		},

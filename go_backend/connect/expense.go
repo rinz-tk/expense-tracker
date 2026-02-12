@@ -52,7 +52,7 @@ func (c *Connect) add_expense(r *http.Request) (AddExpReturn, error) {
 			Target: exp_info.Exp,
 		}
 
-		c.SessionExpAddSend <- em.AddExpense{
+		c.SessionExpAddSend <- em.AddSessionExpense{
 			Uid: token.Id,
 			Exp: new_exp,
 		}
